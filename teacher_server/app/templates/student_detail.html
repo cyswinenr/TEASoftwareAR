@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}学生详情 - {{ group.submission_id }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>学生基本信息</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
+        <div>
+            <strong>学校：</strong>{{ group.school }}
+        </div>
+        <div>
+            <strong>年级：</strong>{{ group.grade }}
+        </div>
+        <div>
+            <strong>班级：</strong>{{ group.class_number }}班
+        </div>
+        <div>
+            <strong>活动日期：</strong>{{ group.activity_date }}
+        </div>
+        <div>
+            <strong>成员人数：</strong>{{ group.member_count }}人
+        </div>
+        <div>
+            <strong>提交时间：</strong>{{ group.submit_time.strftime('%Y-%m-%d %H:%M:%S') if group.submit_time else '' }}
+        </div>
+    </div>
+    
+    <h3 style="margin-top: 20px;">小组成员</h3>
+    <div style="margin-top: 10px;">
+        {% for member in group.members %}
+        <span style="display: inline-block; padding: 8px 16px; margin: 5px; background-color: #E8F5E9; border-radius: 6px;">
+            {{ member.member_index }}. {{ member.member_name }}
+        </span>
+        {% endfor %}
+    </div>
+</div>
+
+{% if group.task1 %}
+<div class="card">
+    <h2>任务一：泡茶体验、品茶时刻</h2>
+    
+    <h3 style="margin-top: 20px;">茶品信息</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 10px;">
+        <div><strong>茶品名：</strong>{{ group.task1.tea_name or '未填写' }}</div>
+        <div><strong>老师茶品名：</strong>{{ group.task1.teacher_tea_name or '未填写' }}</div>
+        <div><strong>茶类：</strong>{{ group.task1.tea_category or '未填写' }}</div>
+        <div><strong>水温：</strong>{{ group.task1.water_temperature or '未填写' }}</div>
+        <div><strong>冲泡时长：</strong>{{ group.task1.brewing_duration or '未填写' }}</div>
+    </div>
+    
+    <h3 style="margin-top: 20px;">感官记录表格</h3>
+    <table class="table" style="margin-top: 10px;">
+        <thead>
+            <tr>
+                <th></th>
+                <th>色泽(观看)</th>
+                <th>香气(轻嗅)</th>
+                <th>形状(观看)</th>
+                <th>滋味(品尝)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% set records = group.task1.get_sensory_records() %}
+            <tr>
+                <td><strong>干茶</strong></td>
+                <td>{{ records.get('dryTea', {}).get('color', '') }}</td>
+                <td>{{ records.get('dryTea', {}).get('aroma', '') }}</td>
+                <td>{{ records.get('dryTea', {}).get('shape', '') }}</td>
+                <td>{{ records.get('dryTea', {}).get('taste', '') }}</td>
+            </tr>
+            <tr>
+                <td><strong>茶汤</strong></td>
+                <td>{{ records.get('teaLiquor', {}).get('color', '') }}</td>
+                <td>{{ records.get('teaLiquor', {}).get('aroma', '') }}</td>
+                <td>{{ records.get('teaLiquor', {}).get('shape', '') }}</td>
+                <td>{{ records.get('teaLiquor', {}).get('taste', '') }}</td>
+            </tr>
+            <tr>
+                <td><strong>叶底</strong></td>
+                <td>{{ records.get('spentLeaves', {}).get('color', '') }}</td>
+                <td>{{ records.get('spentLeaves', {}).get('aroma', '') }}</td>
+                <td>{{ records.get('spentLeaves', {}).get('shape', '') }}</td>
+                <td>{{ records.get('spentLeaves', {}).get('taste', '') }}</td>
+            </tr>
+        </tbody>
+    </table>
+    
+    {% if group.task1.reflection_answer %}
+    <h3 style="margin-top: 20px;">思考题答案</h3>
+    <div style="margin-top: 10px; padding: 15px; background-color: #F5F5F5; border-radius: 8px; white-space: pre-wrap;">
+        {{ group.task1.reflection_answer }}
+    </div>
+    {% endif %}
+    
+    {% set task1_photos = group.photos | selectattr('photo_type', 'equalto', 'task1') | list %}
+    {% if task1_photos %}
+    <h3 style="margin-top: 20px;">照片</h3>
+    <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px;">
+        {% for photo in task1_photos %}
+        <img src="/static/photos/{{ photo.file_name }}" alt="照片" style="max-width: 200px; max-height: 200px; border-radius: 8px; cursor: pointer;" onclick="window.open(this.src)">
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+{% if group.task2 %}
+<div class="card">
+    <h2>任务二：泡出你心中的那杯茶</h2>
+    
+    <h3 style="margin-top: 20px;">茶品信息</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 10px;">
+        <div><strong>茶品名：</strong>{{ group.task2.tea_name or '未填写' }}</div>
+        <div><strong>水温：</strong>{{ group.task2.water_temperature or '未填写' }}</div>
+        <div><strong>出汤时长：</strong>{{ group.task2.steeping_duration or '未填写' }}</div>
+    </div>
+    
+    <h3 style="margin-top: 20px;">茶汤特点</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 10px;">
+        <div><strong>色泽：</strong>{{ group.task2.tea_color or '未填写' }}</div>
+        <div><strong>香气：</strong>{{ group.task2.tea_aroma or '未填写' }}</div>
+        <div><strong>滋味：</strong>{{ group.task2.tea_taste or '未填写' }}</div>
+    </div>
+    
+    <h3 style="margin-top: 20px;">是否符合预期</h3>
+    <div style="margin-top: 10px;">
+        {% if group.task2.meets_expectation %}
+        <span style="padding: 8px 16px; background-color: #4CAF50; color: white; border-radius: 6px; margin-right: 10px;">✓ 符合预期</span>
+        {% endif %}
+        {% if group.task2.not_meets_expectation %}
+        <span style="padding: 8px 16px; background-color: #F44336; color: white; border-radius: 6px;">✓ 不符合预期</span>
+        {% endif %}
+    </div>
+    
+    {% if group.task2.reflection_answer %}
+    <h3 style="margin-top: 20px;">思考题答案</h3>
+    <div style="margin-top: 10px; padding: 15px; background-color: #F5F5F5; border-radius: 8px; white-space: pre-wrap;">
+        {{ group.task2.reflection_answer }}
+    </div>
+    {% endif %}
+    
+    {% set task2_photos = group.photos | selectattr('photo_type', 'equalto', 'task2') | list %}
+    {% if task2_photos %}
+    <h3 style="margin-top: 20px;">照片</h3>
+    <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px;">
+        {% for photo in task2_photos %}
+        <img src="/static/photos/{{ photo.file_name }}" alt="照片" style="max-width: 200px; max-height: 200px; border-radius: 8px; cursor: pointer;" onclick="window.open(this.src)">
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+{% for thinking in group.thinking_questions %}
+<div class="card">
+    <h2>
+        {% if thinking.question_type == 'thinking1' %}思考题一
+        {% elif thinking.question_type == 'thinking2' %}思考题二
+        {% elif thinking.question_type == 'creative' %}创意题
+        {% else %}{{ thinking.question_type }}{% endif %}
+    </h2>
+    
+    {% if thinking.answer %}
+    <div style="margin-top: 15px; padding: 15px; background-color: #F5F5F5; border-radius: 8px; white-space: pre-wrap;">
+        {{ thinking.answer }}
+    </div>
+    {% endif %}
+    
+    {% set thinking_photos = group.photos | selectattr('photo_type', 'equalto', thinking.question_type) | list %}
+    {% if thinking_photos %}
+    <h3 style="margin-top: 20px;">照片</h3>
+    <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px;">
+        {% for photo in thinking_photos %}
+        <img src="/static/photos/{{ photo.file_name }}" alt="照片" style="max-width: 200px; max-height: 200px; border-radius: 8px; cursor: pointer;" onclick="window.open(this.src)">
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endfor %}
+
+<div style="margin-top: 20px;">
+    <a href="/" class="btn">返回列表</a>
+</div>
+{% endblock %}
+
