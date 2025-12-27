@@ -11,38 +11,83 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.content.Context
+import android.content.SharedPreferences
+import android.widget.Toast
 import kotlinx.coroutines.delay
 
 @Composable
 fun Task1Screen(onBackClick: () -> Unit) {
-    // 表格数据状态
-    var dryTeaColor by remember { mutableStateOf("") }
-    var dryTeaAroma by remember { mutableStateOf("") }
-    var dryTeaShape by remember { mutableStateOf("") }
-    var dryTeaTaste by remember { mutableStateOf("") }
+    val context = LocalContext.current
+    val sharedPreferences = remember {
+        context.getSharedPreferences("Task1Data", Context.MODE_PRIVATE)
+    }
     
-    var teaLiquorColor by remember { mutableStateOf("") }
-    var teaLiquorAroma by remember { mutableStateOf("") }
-    var teaLiquorShape by remember { mutableStateOf("") }
-    var teaLiquorTaste by remember { mutableStateOf("") }
+    // 表格数据状态 - 从 SharedPreferences 加载
+    var dryTeaColor by remember { mutableStateOf(sharedPreferences.getString("dryTeaColor", "") ?: "") }
+    var dryTeaAroma by remember { mutableStateOf(sharedPreferences.getString("dryTeaAroma", "") ?: "") }
+    var dryTeaShape by remember { mutableStateOf(sharedPreferences.getString("dryTeaShape", "") ?: "") }
+    var dryTeaTaste by remember { mutableStateOf(sharedPreferences.getString("dryTeaTaste", "") ?: "") }
     
-    var spentLeavesColor by remember { mutableStateOf("") }
-    var spentLeavesAroma by remember { mutableStateOf("") }
-    var spentLeavesShape by remember { mutableStateOf("") }
-    var spentLeavesTaste by remember { mutableStateOf("") }
+    var teaLiquorColor by remember { mutableStateOf(sharedPreferences.getString("teaLiquorColor", "") ?: "") }
+    var teaLiquorAroma by remember { mutableStateOf(sharedPreferences.getString("teaLiquorAroma", "") ?: "") }
+    var teaLiquorShape by remember { mutableStateOf(sharedPreferences.getString("teaLiquorShape", "") ?: "") }
+    var teaLiquorTaste by remember { mutableStateOf(sharedPreferences.getString("teaLiquorTaste", "") ?: "") }
     
-    // 输入字段状态
-    var waterTemperature by remember { mutableStateOf("") }
-    var brewingDuration by remember { mutableStateOf("") }
-    var teaCategory by remember { mutableStateOf("") }
-    var teaName by remember { mutableStateOf("") }
-    var teacherTeaName by remember { mutableStateOf("") }
+    var spentLeavesColor by remember { mutableStateOf(sharedPreferences.getString("spentLeavesColor", "") ?: "") }
+    var spentLeavesAroma by remember { mutableStateOf(sharedPreferences.getString("spentLeavesAroma", "") ?: "") }
+    var spentLeavesShape by remember { mutableStateOf(sharedPreferences.getString("spentLeavesShape", "") ?: "") }
+    var spentLeavesTaste by remember { mutableStateOf(sharedPreferences.getString("spentLeavesTaste", "") ?: "") }
     
-    // 思考题答案
-    var reflectionAnswer by remember { mutableStateOf("") }
+    // 输入字段状态 - 从 SharedPreferences 加载
+    var waterTemperature by remember { mutableStateOf(sharedPreferences.getString("waterTemperature", "") ?: "") }
+    var brewingDuration by remember { mutableStateOf(sharedPreferences.getString("brewingDuration", "") ?: "") }
+    var teaCategory by remember { mutableStateOf(sharedPreferences.getString("teaCategory", "") ?: "") }
+    var teaName by remember { mutableStateOf(sharedPreferences.getString("teaName", "") ?: "") }
+    var teacherTeaName by remember { mutableStateOf(sharedPreferences.getString("teacherTeaName", "") ?: "") }
+    
+    // 思考题答案 - 从 SharedPreferences 加载
+    var reflectionAnswer by remember { mutableStateOf(sharedPreferences.getString("reflectionAnswer", "") ?: "") }
+    
+    // 保存数据函数
+    fun saveData() {
+        with(sharedPreferences.edit()) {
+            // 保存表格数据
+            putString("dryTeaColor", dryTeaColor)
+            putString("dryTeaAroma", dryTeaAroma)
+            putString("dryTeaShape", dryTeaShape)
+            putString("dryTeaTaste", dryTeaTaste)
+            
+            putString("teaLiquorColor", teaLiquorColor)
+            putString("teaLiquorAroma", teaLiquorAroma)
+            putString("teaLiquorShape", teaLiquorShape)
+            putString("teaLiquorTaste", teaLiquorTaste)
+            
+            putString("spentLeavesColor", spentLeavesColor)
+            putString("spentLeavesAroma", spentLeavesAroma)
+            putString("spentLeavesShape", spentLeavesShape)
+            putString("spentLeavesTaste", spentLeavesTaste)
+            
+            // 保存输入字段
+            putString("waterTemperature", waterTemperature)
+            putString("brewingDuration", brewingDuration)
+            putString("teaCategory", teaCategory)
+            putString("teaName", teaName)
+            putString("teacherTeaName", teacherTeaName)
+            
+            // 保存思考题答案
+            putString("reflectionAnswer", reflectionAnswer)
+            
+            apply()
+        }
+        Toast.makeText(context, "数据保存成功！", Toast.LENGTH_SHORT).show()
+    }
     
     // 计时器状态
     var showTimer by remember { mutableStateOf(false) }
@@ -93,7 +138,7 @@ fun Task1Screen(onBackClick: () -> Unit) {
                     color = Color(0xFF2E7D32)
                 )
                 
-                // 计时器开关和返回按钮
+                // 计时器开关、保存按钮和返回按钮
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(15.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -117,6 +162,20 @@ fun Task1Screen(onBackClick: () -> Unit) {
                                 checkedTrackColor = Color(0xFF81C784)
                             )
                         )
+                    }
+                    
+                    // 保存按钮
+                    Button(
+                        onClick = { saveData() },
+                        modifier = Modifier
+                            .width(120.dp)
+                            .height(50.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF388E3C)
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("保存", fontSize = 20.sp, fontWeight = FontWeight.Bold)
                     }
                     
                     // 返回按钮
@@ -287,7 +346,8 @@ fun Task1Screen(onBackClick: () -> Unit) {
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(15.dp)
             ) {
-                InputField("冲泡的水温:", waterTemperature) { waterTemperature = it }
+                // 水温输入（只允许数字，显示°C单位）
+                TemperatureInputField("冲泡的水温:", waterTemperature) { waterTemperature = it }
                 InputField("每泡茶叶的时长:", brewingDuration) { brewingDuration = it }
                 InputField("茶叶品类:", teaCategory) { teaCategory = it }
                 InputField("茶品名:", teaName) { teaName = it }
@@ -413,6 +473,58 @@ fun RowScope.TableInputCell(
             ),
             shape = RoundedCornerShape(0.dp)
         )
+    }
+}
+
+@Composable
+fun TemperatureInputField(label: String, value: String, onValueChange: (String) -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Text(
+            text = label,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Medium,
+            color = Color(0xFF424242),
+            modifier = Modifier.width(180.dp)
+        )
+        Row(
+            modifier = Modifier.weight(1f),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            OutlinedTextField(
+                value = value,
+                onValueChange = { newValue ->
+                    // 只允许数字输入
+                    if (newValue.isEmpty() || newValue.all { it.isDigit() }) {
+                        onValueChange(newValue)
+                    }
+                },
+                modifier = Modifier
+                    .weight(1f)
+                    .height(50.dp),
+                shape = RoundedCornerShape(8.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color(0xFF4CAF50),
+                    unfocusedBorderColor = Color(0xFF81C784)
+                ),
+                textStyle = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number
+                )
+            )
+            Text(
+                text = "°C",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF2E7D32),
+                modifier = Modifier.padding(end = 8.dp)
+            )
+        }
     }
 }
 
