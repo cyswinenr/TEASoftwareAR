@@ -9,6 +9,12 @@ from app.models import (
 )
 from app.utils.validators import *
 from app.services.photo_service import save_photo_from_base64
+from pathlib import Path
+import os
+import sys
+# 添加项目根目录到路径
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+from config import Config
 
 def generate_submission_id(school, grade, class_number):
     """生成唯一提交ID"""
@@ -258,4 +264,41 @@ def save_all_data(data):
         db.session.rollback()
         print(f"保存数据失败: {e}")
         return False, f"保存数据失败: {str(e)}", None
+
+def delete_student_data(submission_id):
+    """
+    删除学生提交的所有数据
+    
+    Args:
+        submission_id: 提交ID
+    
+    Returns:
+        (success: bool, message: str)
+    """
+    try:
+        # 查找学生组
+        group = StudentGroup.query.filter_by(submission_id=submission_id).first()
+        
+        if not group:
+            return False, "学生数据不存在"
+        
+        # 删除所有照片文件
+        for photo in group.photos:
+            try:
+                photo_path = Path(Config.UPLOAD_FOLDER) / Path(photo.file_path).name
+                if photo_path.exists():
+                    photo_path.unlink()
+            except Exception as e:
+                print(f"删除照片文件失败: {photo.file_path}, 错误: {e}")
+        
+        # 删除数据库记录（级联删除会自动删除关联数据）
+        db.session.delete(group)
+        db.session.commit()
+        
+        return True, "删除成功"
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"删除数据失败: {e}")
+        return False, f"删除失败: {str(e)}"
 

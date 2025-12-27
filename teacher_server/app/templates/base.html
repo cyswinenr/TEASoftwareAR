@@ -131,6 +131,56 @@
         .pagination .current {
             background-color: #2E7D32;
         }
+        
+        /* 删除按钮样式 */
+        .btn-danger {
+            background-color: #F44336;
+        }
+        
+        .btn-danger:hover {
+            background-color: #D32F2F;
+        }
+        
+        /* 确认对话框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        
+        .modal-header {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #F44336;
+        }
+        
+        .modal-body {
+            margin-bottom: 20px;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
@@ -142,6 +192,83 @@
         
         {% block content %}{% endblock %}
     </div>
+    
+    <!-- 删除确认对话框 -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">确认删除</div>
+            <div class="modal-body" id="deleteModalBody">
+                确定要删除这条数据吗？此操作不可恢复。
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeDeleteModal()" class="btn btn-secondary">取消</button>
+                <button onclick="confirmDelete()" class="btn btn-danger">确认删除</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let deleteSubmissionId = null;
+        
+        function deleteStudent(submissionId, studentInfo) {
+            deleteSubmissionId = submissionId;
+            const modal = document.getElementById('deleteModal');
+            const modalBody = document.getElementById('deleteModalBody');
+            modalBody.innerHTML = `确定要删除以下数据吗？<br><br><strong>${studentInfo || submissionId}</strong><br><br>此操作不可恢复，将删除所有相关数据（包括照片）。`;
+            modal.style.display = 'block';
+        }
+        
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').style.display = 'none';
+            deleteSubmissionId = null;
+        }
+        
+        function confirmDelete() {
+            if (!deleteSubmissionId) {
+                return;
+            }
+            
+            // 显示加载状态
+            const confirmBtn = event.target;
+            const originalText = confirmBtn.textContent;
+            confirmBtn.textContent = '删除中...';
+            confirmBtn.disabled = true;
+            
+            // 发送删除请求
+            fetch(`/api/students/${deleteSubmissionId}/delete`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('删除成功！');
+                    // 刷新页面
+                    window.location.reload();
+                } else {
+                    alert('删除失败：' + data.message);
+                    confirmBtn.textContent = originalText;
+                    confirmBtn.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('删除错误:', error);
+                alert('删除失败：网络错误');
+                confirmBtn.textContent = originalText;
+                confirmBtn.disabled = false;
+            });
+        }
+        
+        // 点击模态框外部关闭
+        window.onclick = function(event) {
+            const modal = document.getElementById('deleteModal');
+            if (event.target == modal) {
+                closeDeleteModal();
+            }
+        }
+    </script>
     
     {% block extra_js %}{% endblock %}
 </body>

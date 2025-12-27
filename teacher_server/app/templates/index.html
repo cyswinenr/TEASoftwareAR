@@ -56,7 +56,14 @@
                 <td>{{ student.member_count }}人</td>
                 <td>{{ student.submit_time.strftime('%Y-%m-%d %H:%M') if student.submit_time else '' }}</td>
                 <td>
-                    <a href="/student/{{ student.submission_id }}" class="btn btn-secondary" style="padding: 6px 12px; font-size: 14px;">查看详情</a>
+                    <div style="display: flex; gap: 8px;">
+                        <a href="/student/{{ student.submission_id }}" class="btn btn-secondary" style="padding: 6px 12px; font-size: 14px;">查看详情</a>
+                        <button onclick="deleteStudent('{{ student.submission_id }}', '{{ student.school }} - {{ student.grade }}{{ student.class_number }}班')" 
+                                class="btn" 
+                                style="padding: 6px 12px; font-size: 14px; background-color: #F44336; color: white;">
+                            删除
+                        </button>
+                    </div>
                 </td>
             </tr>
             {% else %}

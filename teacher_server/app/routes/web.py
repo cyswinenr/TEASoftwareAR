@@ -1,9 +1,10 @@
 """
 Web路由 - 教师查看界面
 """
-from flask import Blueprint, render_template, request, jsonify, send_from_directory
+from flask import Blueprint, render_template, request, jsonify, send_from_directory, redirect, url_for
 from app import db
 from app.models import StudentGroup, GroupMember, Task1Data, Task2Data, ThinkingQuestion, Photo
+from app.services.data_service import delete_student_data
 from pathlib import Path
 from pathlib import Path
 import sys
@@ -138,6 +139,29 @@ def api_student_detail(submission_id):
         'success': True,
         'data': data
     })
+
+@web_bp.route('/api/students/<submission_id>/delete', methods=['POST', 'DELETE'])
+def delete_student(submission_id):
+    """删除学生数据"""
+    try:
+        success, message = delete_student_data(submission_id)
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'message': message
+            }), 200
+        else:
+            return jsonify({
+                'success': False,
+                'message': message
+            }), 400
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'删除失败: {str(e)}'
+        }), 500
 
 @web_bp.route('/static/photos/<filename>')
 def serve_photo(filename):
