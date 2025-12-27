@@ -13,6 +13,7 @@ import Teacourse.apk.ui.screens.TaskOverviewScreen
 import Teacourse.apk.ui.screens.Thinking1Screen
 import Teacourse.apk.ui.screens.Thinking2Screen
 import Teacourse.apk.ui.screens.CreativeScreen
+import Teacourse.apk.ui.screens.SummaryScreen
 
 sealed class Screen(val route: String) {
     object Splash : Screen("splash")
@@ -23,6 +24,7 @@ sealed class Screen(val route: String) {
     object Thinking1 : Screen("thinking_1")
     object Thinking2 : Screen("thinking_2")
     object Creative : Screen("creative")
+    object Summary : Screen("summary")
 }
 
 @Composable
@@ -63,6 +65,9 @@ fun NavGraph(navController: NavHostController) {
                     navController.navigate(Screen.InfoInput.route) {
                         popUpTo(Screen.TaskOverview.route) { inclusive = true }
                     }
+                },
+                onSummaryClick = {
+                    navController.navigate(Screen.Summary.route)
                 }
             )
         }
@@ -103,6 +108,34 @@ fun NavGraph(navController: NavHostController) {
             CreativeScreen(
                 onBackClick = {
                     navController.popBackStack()
+                }
+            )
+        }
+        
+        composable(Screen.Summary.route) {
+            SummaryScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onNavigateToTask1 = {
+                    navController.navigate(Screen.Task1.route) {
+                        popUpTo(Screen.Summary.route)
+                    }
+                },
+                onNavigateToTask2 = {
+                    navController.navigate(Screen.Task2.route) {
+                        popUpTo(Screen.Summary.route)
+                    }
+                },
+                onNavigateToThinking1 = {
+                    navController.navigate(Screen.Thinking1.route) {
+                        popUpTo(Screen.Summary.route)
+                    }
+                },
+                onNavigateToThinking2 = {
+                    navController.navigate(Screen.Thinking2.route) {
+                        popUpTo(Screen.Summary.route)
+                    }
                 }
             )
         }
