@@ -6,6 +6,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import Teacourse.apk.ui.screens.InfoInputScreen
 import Teacourse.apk.ui.screens.SplashScreen
+import Teacourse.apk.ui.screens.Task1Screen
 import Teacourse.apk.ui.screens.TaskDetailScreen
 import Teacourse.apk.ui.screens.TaskOverviewScreen
 
@@ -63,8 +64,7 @@ fun NavGraph(navController: NavHostController) {
         }
         
         composable(Screen.Task1.route) {
-            TaskDetailScreen(
-                title = "任务一：泡茶体验、品茶时",
+            Task1Screen(
                 onBackClick = {
                     navController.popBackStack()
                 }

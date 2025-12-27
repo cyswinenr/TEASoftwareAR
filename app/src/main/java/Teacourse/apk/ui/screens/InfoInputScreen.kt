@@ -14,9 +14,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.content.Context
+import android.content.SharedPreferences
+import android.widget.Toast
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -26,16 +30,51 @@ fun InfoInputScreen(
     onNextClick: () -> Unit,
     onBackClick: () -> Unit = {}
 ) {
-    var school by remember { mutableStateOf("") }
-    var className by remember { mutableStateOf("") }
-    var date by remember { mutableStateOf(getCurrentDate()) }
-    var selectedMemberCount by remember { mutableStateOf(0) }
-    var memberNames by remember { mutableStateOf(List(10) { "" }) }
+    val context = LocalContext.current
+    val sharedPreferences = remember {
+        context.getSharedPreferences("TeaCultureApp", Context.MODE_PRIVATE)
+    }
+    
+    // 从 SharedPreferences 加载已保存的数据
+    var school by remember { 
+        mutableStateOf(sharedPreferences.getString("school", "") ?: "")
+    }
+    var className by remember { 
+        mutableStateOf(sharedPreferences.getString("className", "") ?: "")
+    }
+    var date by remember { 
+        mutableStateOf(sharedPreferences.getString("date", getCurrentDate()) ?: getCurrentDate())
+    }
+    var selectedMemberCount by remember { 
+        mutableStateOf(sharedPreferences.getInt("memberCount", 0))
+    }
+    var memberNames by remember { 
+        mutableStateOf(
+            List(10) { index ->
+                sharedPreferences.getString("memberName_$index", "") ?: ""
+            }
+        )
+    }
     var expanded by remember { mutableStateOf(false) }
     
     val memberCountOptions = (1..10).toList()
     
     val scrollState = rememberScrollState()
+    
+    // 保存数据的函数
+    fun saveData() {
+        with(sharedPreferences.edit()) {
+            putString("school", school)
+            putString("className", className)
+            putString("date", date)
+            putInt("memberCount", selectedMemberCount)
+            memberNames.forEachIndexed { index, name ->
+                putString("memberName_$index", name)
+            }
+            apply()
+        }
+        Toast.makeText(context, "信息保存成功！", Toast.LENGTH_SHORT).show()
+    }
     
     // 当人数改变时，重置超出范围的姓名
     LaunchedEffect(selectedMemberCount) {
@@ -294,13 +333,13 @@ fun InfoInputScreen(
                 // 保存按钮
                 Button(
                     onClick = {
-                        // TODO: 保存数据到本地存储
+                        saveData()
                     },
                     modifier = Modifier
                         .weight(1f)
                         .height(60.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF81C784)
+                        containerColor = Color(0xFF388E3C)
                     ),
                     shape = RoundedCornerShape(12.dp)
                 ) {

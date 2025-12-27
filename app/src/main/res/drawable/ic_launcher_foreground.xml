@@ -5,85 +5,75 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
     
-    <!-- 茶杯主体 -->
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M24,32
-            L24,76
-            Q24,80 28,80
-            L80,80
-            Q84,80 84,76
-            L84,32
-            Q84,28 80,28
-            L28,28
-            Q24,28 24,32
-            Z" />
-    
-    <!-- 茶杯内壁 -->
-    <path
-        android:fillColor="#FAFAFA"
-        android:pathData="M28,36
-            L28,72
-            Q28,74 30,74
-            L78,74
-            Q80,74 80,72
-            L80,36
-            Q80,34 78,34
-            L30,34
-            Q28,34 28,36
-            Z" />
-    
-    <!-- 茶水 -->
-    <path
-        android:fillColor="#6D4C41"
-        android:pathData="M30,48
-            L78,48
-            L78,64
-            L30,64
-            Z" />
-    
-    <!-- 茶杯把手 -->
-    <path
-        android:fillColor="#FFFFFF"
-        android:strokeColor="#E0E0E0"
-        android:strokeWidth="4"
-        android:pathData="M84,48
-            Q96,46 96,54
-            Q96,62 84,60
-            Q86,54 84,48
-            Z" />
-    
-    <!-- 茶叶装饰（两片） -->
+    <!-- 茶叶主体（椭圆形，稍微倾斜） -->
     <path
         android:fillColor="#2E7D32"
-        android:pathData="M40,52
-            Q45,49 50,52
-            Q45,55 40,52
-            Z" />
-    <path
-        android:fillColor="#388E3C"
-        android:pathData="M58,56
-            Q63,53 68,56
-            Q63,59 58,56
+        android:pathData="M25,30
+            Q15,35 15,50
+            Q15,65 25,75
+            Q35,80 54,80
+            Q73,80 83,75
+            Q93,65 93,50
+            Q93,35 83,30
+            Q73,25 54,25
+            Q35,25 25,30
             Z" />
     
-    <!-- 热气（三缕，更明显） -->
+    <!-- 茶叶高光（上半部分，更亮） -->
     <path
-        android:fillColor="#E0E0E0"
-        android:pathData="M42,28
-            Q40,22 42,16
-            Q44,22 42,28
+        android:fillColor="#4CAF50"
+        android:pathData="M25,30
+            Q15,35 15,50
+            Q15,55 20,55
+            Q25,50 30,45
+            Q35,40 40,37
+            Q45,35 54,35
+            Q63,35 68,37
+            Q73,40 78,45
+            Q83,50 88,55
+            Q93,55 93,50
+            Q93,35 83,30
+            Q73,25 54,25
+            Q35,25 25,30
             Z" />
+    
+    <!-- 主叶脉（从底部到顶部，粗一点） -->
     <path
-        android:fillColor="#E0E0E0"
-        android:pathData="M54,28
-            Q52,22 54,16
-            Q56,22 54,28
-            Z" />
+        android:fillColor="#1B5E20"
+        android:strokeWidth="3"
+        android:pathData="M54,80
+            L54,30" />
+    
+    <!-- 侧叶脉（左侧，从主脉分出） -->
     <path
-        android:fillColor="#E0E0E0"
-        android:pathData="M66,28
-            Q64,22 66,16
-            Q68,22 66,28
+        android:fillColor="#1B5E20"
+        android:strokeWidth="2"
+        android:pathData="M54,55
+            Q45,50 38,45" />
+    <path
+        android:fillColor="#1B5E20"
+        android:strokeWidth="2"
+        android:pathData="M54,65
+            Q45,60 35,55" />
+    
+    <!-- 侧叶脉（右侧，从主脉分出） -->
+    <path
+        android:fillColor="#1B5E20"
+        android:strokeWidth="2"
+        android:pathData="M54,55
+            Q63,50 70,45" />
+    <path
+        android:fillColor="#1B5E20"
+        android:strokeWidth="2"
+        android:pathData="M54,65
+            Q63,60 73,55" />
+    
+    <!-- 茶叶底部（稍微尖一点） -->
+    <path
+        android:fillColor="#1B5E20"
+        android:pathData="M54,80
+            L50,85
+            L54,82
+            L58,85
             Z" />
 </vector>
