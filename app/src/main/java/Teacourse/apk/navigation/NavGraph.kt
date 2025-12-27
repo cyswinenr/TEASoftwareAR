@@ -7,8 +7,12 @@ import androidx.navigation.compose.composable
 import Teacourse.apk.ui.screens.InfoInputScreen
 import Teacourse.apk.ui.screens.SplashScreen
 import Teacourse.apk.ui.screens.Task1Screen
+import Teacourse.apk.ui.screens.Task2Screen
 import Teacourse.apk.ui.screens.TaskDetailScreen
 import Teacourse.apk.ui.screens.TaskOverviewScreen
+import Teacourse.apk.ui.screens.Thinking1Screen
+import Teacourse.apk.ui.screens.Thinking2Screen
+import Teacourse.apk.ui.screens.CreativeScreen
 
 sealed class Screen(val route: String) {
     object Splash : Screen("splash")
@@ -72,8 +76,7 @@ fun NavGraph(navController: NavHostController) {
         }
         
         composable(Screen.Task2.route) {
-            TaskDetailScreen(
-                title = "任务二：泡出你心中的那杯茶",
+            Task2Screen(
                 onBackClick = {
                     navController.popBackStack()
                 }
@@ -81,8 +84,7 @@ fun NavGraph(navController: NavHostController) {
         }
         
         composable(Screen.Thinking1.route) {
-            TaskDetailScreen(
-                title = "思考题一",
+            Thinking1Screen(
                 onBackClick = {
                     navController.popBackStack()
                 }
@@ -90,8 +92,7 @@ fun NavGraph(navController: NavHostController) {
         }
         
         composable(Screen.Thinking2.route) {
-            TaskDetailScreen(
-                title = "思考题二",
+            Thinking2Screen(
                 onBackClick = {
                     navController.popBackStack()
                 }
@@ -99,8 +100,7 @@ fun NavGraph(navController: NavHostController) {
         }
         
         composable(Screen.Creative.route) {
-            TaskDetailScreen(
-                title = "创意题",
+            CreativeScreen(
                 onBackClick = {
                     navController.popBackStack()
                 }

@@ -1,0 +1,308 @@
+package Teacourse.apk.ui.screens
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import android.Manifest
+import android.content.Context
+import android.content.Intent
+import android.content.SharedPreferences
+import android.content.pm.PackageManager
+import android.os.Build
+import android.speech.RecognizerIntent
+import android.speech.SpeechRecognizer
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+
+@Composable
+fun Thinking1Screen(onBackClick: () -> Unit) {
+    val context = LocalContext.current
+    val sharedPreferences = remember {
+        context.getSharedPreferences("Thinking1Data", Context.MODE_PRIVATE)
+    }
+    
+    // 答案状态 - 从 SharedPreferences 加载
+    var answer by remember { 
+        mutableStateOf(sharedPreferences.getString("answer", "") ?: "") 
+    }
+    
+    // 保存数据函数
+    fun saveData() {
+        with(sharedPreferences.edit()) {
+            putString("answer", answer)
+            apply()
+        }
+        Toast.makeText(context, "数据保存成功！", Toast.LENGTH_SHORT).show()
+    }
+    
+    // 检查语音识别是否可用
+    val isSpeechRecognitionAvailable = remember {
+        SpeechRecognizer.isRecognitionAvailable(context)
+    }
+    
+    // 语音识别结果处理
+    val speechLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            val results = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+            if (results != null && results.isNotEmpty()) {
+                val spokenText = results[0]
+                // 将语音识别的结果追加到现有答案中
+                answer = if (answer.isEmpty()) {
+                    spokenText
+                } else {
+                    "$answer $spokenText"
+                }
+            }
+        } else {
+            Toast.makeText(context, "语音识别未完成", Toast.LENGTH_SHORT).show()
+        }
+    }
+    
+    // 内部启动语音识别（已检查权限）
+    fun startSpeechRecognitionInternal() {
+        if (!isSpeechRecognitionAvailable) {
+            return
+        }
+        
+        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE, "zh-CN")
+            putExtra(RecognizerIntent.EXTRA_PROMPT, "请开始说话...")
+        }
+        
+        try {
+            speechLauncher.launch(intent)
+        } catch (e: Exception) {
+            Toast.makeText(context, "语音识别启动失败: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+    
+    // 权限请求启动器
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            startSpeechRecognitionInternal()
+        } else {
+            Toast.makeText(context, "需要麦克风权限才能使用语音输入", Toast.LENGTH_LONG).show()
+        }
+    }
+    
+    // 启动语音识别（动态检查权限）
+    fun startSpeechRecognition() {
+        // 动态检查权限状态
+        val hasPermission = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.RECORD_AUDIO
+        ) == PackageManager.PERMISSION_GRANTED
+        
+        if (hasPermission) {
+            startSpeechRecognitionInternal()
+        } else {
+            // 请求权限
+            permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+        }
+    }
+    
+    val scrollState = rememberScrollState()
+    
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF5F5DC))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+                .padding(30.dp)
+        ) {
+            // 标题、保存按钮和返回按钮
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                // 标题
+                Text(
+                    text = "3.思考题一",
+                    fontSize = 32.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFFF9800)
+                )
+                
+                // 保存按钮和返回按钮
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(15.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // 保存按钮
+                    Button(
+                        onClick = { saveData() },
+                        modifier = Modifier
+                            .width(120.dp)
+                            .height(50.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFFF9800)
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("保存", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    }
+                    
+                    // 返回按钮
+                    Button(
+                        onClick = onBackClick,
+                        modifier = Modifier
+                            .width(120.dp)
+                            .height(50.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFFFB74D)
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("返回", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(30.dp))
+            
+            // 题目内容
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 10.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.White
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp)
+                ) {
+                    Text(
+                        text = "通过今天的课程,你们对茶文化有了哪些新的认识?",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF424242),
+                        modifier = Modifier.padding(bottom = 10.dp)
+                    )
+                    Text(
+                        text = "你们喜欢课程的哪些环节?",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF424242),
+                        modifier = Modifier.padding(bottom = 10.dp)
+                    )
+                    Text(
+                        text = "还有没有其他想要了解的茶文化内容?",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF424242)
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(30.dp))
+            
+            // 答案输入区域
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.White
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp)
+                ) {
+                    // 输入框标题和语音按钮
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "请输入您的答案：",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF424242)
+                        )
+                        
+                        // 语音输入按钮
+                        if (isSpeechRecognitionAvailable) {
+                            IconButton(
+                                onClick = { startSpeechRecognition() },
+                                modifier = Modifier
+                                    .size(56.dp)
+                                    .background(
+                                        Color(0xFFFF9800),
+                                        shape = RoundedCornerShape(28.dp)
+                                    )
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Mic,
+                                    contentDescription = "语音输入",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(28.dp)
+                                )
+                            }
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(15.dp))
+                    
+                    // 多行文本输入框
+                    OutlinedTextField(
+                        value = answer,
+                        onValueChange = { answer = it },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(400.dp),
+                        textStyle = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp),
+                        singleLine = false,
+                        maxLines = 20,
+                        minLines = 10,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFFFF9800),
+                            unfocusedBorderColor = Color(0xFFBDBDBD),
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(8.dp),
+                        placeholder = {
+                            Text(
+                                text = "请在此输入您的答案，或点击右上角的麦克风图标进行语音输入...",
+                                fontSize = 16.sp,
+                                color = Color(0xFF9E9E9E)
+                            )
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
