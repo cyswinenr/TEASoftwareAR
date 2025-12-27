@@ -151,6 +151,24 @@ fun SplashScreen(onStartClick: () -> Unit) {
                 }
             }
         }
+        
+        // 版本号（右下角）
+        Text(
+            text = "v0.1",
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Medium,
+            color = Color.White.copy(alpha = 0.8f),
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(20.dp),
+            style = TextStyle(
+                shadow = Shadow(
+                    color = Color.Black.copy(alpha = 0.5f),
+                    offset = Offset(1f, 1f),
+                    blurRadius = 3f
+                )
+            )
+        )
     }
 }
 
