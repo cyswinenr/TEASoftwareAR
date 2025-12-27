@@ -118,7 +118,8 @@ fun InfoInputScreen(
                     focusedBorderColor = Color(0xFF4CAF50),
                     unfocusedBorderColor = Color(0xFF81C784)
                 ),
-                textStyle = MaterialTheme.typography.bodyLarge.copy(fontSize = 20.sp)
+                textStyle = MaterialTheme.typography.bodyLarge.copy(fontSize = 20.sp),
+                singleLine = true
             )
             
             // 班级输入
@@ -134,7 +135,8 @@ fun InfoInputScreen(
                     focusedBorderColor = Color(0xFF4CAF50),
                     unfocusedBorderColor = Color(0xFF81C784)
                 ),
-                textStyle = MaterialTheme.typography.bodyLarge.copy(fontSize = 20.sp)
+                textStyle = MaterialTheme.typography.bodyLarge.copy(fontSize = 20.sp),
+                singleLine = true
             )
             
             // 日期输入
@@ -151,6 +153,7 @@ fun InfoInputScreen(
                     unfocusedBorderColor = Color(0xFF81C784)
                 ),
                 textStyle = MaterialTheme.typography.bodyLarge.copy(fontSize = 20.sp),
+                singleLine = true,
                 enabled = false
             )
             

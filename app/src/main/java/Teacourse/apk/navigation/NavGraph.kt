@@ -53,6 +53,11 @@ fun NavGraph(navController: NavHostController) {
             TaskOverviewScreen(
                 onTaskClick = { taskRoute ->
                     navController.navigate(taskRoute)
+                },
+                onBackClick = {
+                    navController.navigate(Screen.InfoInput.route) {
+                        popUpTo(Screen.TaskOverview.route) { inclusive = true }
+                    }
                 }
             )
         }
