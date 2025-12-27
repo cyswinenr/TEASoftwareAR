@@ -615,14 +615,16 @@ fun RowScope.TableHeaderCell(text: String, weightValue: Float) {
             .weight(weightValue)
             .height(50.dp)
             .border(1.dp, Color(0xFFBDBDBD))
-            .padding(8.dp),
+            .padding(horizontal = 4.dp, vertical = 4.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = text,
             fontSize = 16.sp,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFF2E7D32)
+            color = Color(0xFF2E7D32),
+            maxLines = 2,
+            lineHeight = 18.sp
         )
     }
 }
@@ -642,23 +644,26 @@ fun TableDataRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .border(1.dp, Color(0xFFBDBDBD))
+            .border(1.dp, Color(0xFFBDBDBD)),
+        verticalAlignment = Alignment.Top
     ) {
         // 行标签
         Box(
             modifier = Modifier
                 .weight(0.25f)
-                .height(60.dp)
+                .fillMaxHeight()
                 .background(Color(0xFFF5F5F5))
                 .border(1.dp, Color(0xFFBDBDBD))
-                .padding(8.dp),
+                .padding(horizontal = 4.dp, vertical = 4.dp),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = rowLabel,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
-                color = Color(0xFF424242)
+                color = Color(0xFF424242),
+                maxLines = 3,
+                lineHeight = 18.sp
             )
         }
         
@@ -679,7 +684,7 @@ fun RowScope.TableInputCell(
     Box(
         modifier = Modifier
             .weight(weightValue)
-            .height(60.dp)
+            .heightIn(min = 60.dp)
             .border(1.dp, Color(0xFFBDBDBD))
     ) {
         OutlinedTextField(
@@ -687,9 +692,11 @@ fun RowScope.TableInputCell(
             onValueChange = onValueChange,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 8.dp, vertical = 4.dp),
+                .padding(horizontal = 4.dp, vertical = 2.dp),
             textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
-            singleLine = true,
+            singleLine = false,
+            maxLines = 5,
+            minLines = 1,
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = Color.Transparent,
                 unfocusedBorderColor = Color.Transparent
