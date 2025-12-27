@@ -29,9 +29,7 @@ fun NavGraph(navController: NavHostController) {
         composable(Screen.Splash.route) {
             SplashScreen(
                 onStartClick = {
-                    navController.navigate(Screen.InfoInput.route) {
-                        popUpTo(Screen.Splash.route) { inclusive = true }
-                    }
+                    navController.navigate(Screen.InfoInput.route)
                 }
             )
         }
@@ -40,6 +38,11 @@ fun NavGraph(navController: NavHostController) {
             InfoInputScreen(
                 onNextClick = {
                     navController.navigate(Screen.TaskOverview.route) {
+                        popUpTo(Screen.InfoInput.route) { inclusive = true }
+                    }
+                },
+                onBackClick = {
+                    navController.navigate(Screen.Splash.route) {
                         popUpTo(Screen.InfoInput.route) { inclusive = true }
                     }
                 }

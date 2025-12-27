@@ -12,10 +12,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -59,7 +63,7 @@ fun SplashScreen(onStartClick: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(30.dp)
         ) {
-            // 圆形背景框
+            // 圆形背景框（半透明）
             Box(
                 modifier = Modifier
                     .size(400.dp)
@@ -67,8 +71,8 @@ fun SplashScreen(onStartClick: () -> Unit) {
                     .background(
                         Brush.radialGradient(
                             colors = listOf(
-                                Color.White.copy(alpha = 0.95f),
-                                Color.White.copy(alpha = 0.85f)
+                                Color.White.copy(alpha = 0.75f),
+                                Color.White.copy(alpha = 0.65f)
                             )
                         )
                     )
@@ -77,21 +81,54 @@ fun SplashScreen(onStartClick: () -> Unit) {
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(20.dp)
+                    verticalArrangement = Arrangement.spacedBy(25.dp)
                 ) {
-                    Text(
-                        text = "茶文化课程APP",
-                        fontSize = 48.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF2E7D32),
-                        textAlign = TextAlign.Center
-                    )
+                    // 标题文字，分行显示，带阴影
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "茶文化课程",
+                            fontSize = 42.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF2E7D32),
+                            textAlign = TextAlign.Center,
+                            style = TextStyle(
+                                shadow = Shadow(
+                                    color = Color.Black.copy(alpha = 0.5f),
+                                    offset = Offset(2f, 2f),
+                                    blurRadius = 4f
+                                ),
+                                letterSpacing = 2.sp
+                            )
+                        )
+                        Text(
+                            text = "APP",
+                            fontSize = 42.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF2E7D32),
+                            textAlign = TextAlign.Center,
+                            style = TextStyle(
+                                shadow = Shadow(
+                                    color = Color.Black.copy(alpha = 0.5f),
+                                    offset = Offset(2f, 2f),
+                                    blurRadius = 4f
+                                ),
+                                letterSpacing = 4.sp
+                            )
+                        )
+                    }
                     
                     Button(
                         onClick = onStartClick,
                         modifier = Modifier
                             .width(200.dp)
-                            .height(60.dp),
+                            .height(60.dp)
+                            .shadow(
+                                elevation = 8.dp,
+                                shape = androidx.compose.foundation.shape.RoundedCornerShape(30.dp)
+                            ),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFF4CAF50)
                         ),
@@ -101,7 +138,14 @@ fun SplashScreen(onStartClick: () -> Unit) {
                             text = "开始使用",
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = Color.White,
+                            style = TextStyle(
+                                shadow = Shadow(
+                                    color = Color.Black.copy(alpha = 0.3f),
+                                    offset = Offset(1f, 1f),
+                                    blurRadius = 2f
+                                )
+                            )
                         )
                     }
                 }
