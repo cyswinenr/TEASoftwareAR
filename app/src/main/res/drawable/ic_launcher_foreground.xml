@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- 茶杯主体 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M24,32
+            L24,76
+            Q24,80 28,80
+            L80,80
+            Q84,80 84,76
+            L84,32
+            Q84,28 80,28
+            L28,28
+            Q24,28 24,32
+            Z" />
+    
+    <!-- 茶杯内壁 -->
+    <path
+        android:fillColor="#FAFAFA"
+        android:pathData="M28,36
+            L28,72
+            Q28,74 30,74
+            L78,74
+            Q80,74 80,72
+            L80,36
+            Q80,34 78,34
+            L30,34
+            Q28,34 28,36
+            Z" />
+    
+    <!-- 茶水 -->
+    <path
+        android:fillColor="#6D4C41"
+        android:pathData="M30,48
+            L78,48
+            L78,64
+            L30,64
+            Z" />
+    
+    <!-- 茶杯把手 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:strokeColor="#E0E0E0"
+        android:strokeWidth="4"
+        android:pathData="M84,48
+            Q96,46 96,54
+            Q96,62 84,60
+            Q86,54 84,48
+            Z" />
+    
+    <!-- 茶叶装饰（两片） -->
+    <path
+        android:fillColor="#2E7D32"
+        android:pathData="M40,52
+            Q45,49 50,52
+            Q45,55 40,52
+            Z" />
+    <path
+        android:fillColor="#388E3C"
+        android:pathData="M58,56
+            Q63,53 68,56
+            Q63,59 58,56
+            Z" />
+    
+    <!-- 热气（三缕，更明显） -->
+    <path
+        android:fillColor="#E0E0E0"
+        android:pathData="M42,28
+            Q40,22 42,16
+            Q44,22 42,28
+            Z" />
+    <path
+        android:fillColor="#E0E0E0"
+        android:pathData="M54,28
+            Q52,22 54,16
+            Q56,22 54,28
+            Z" />
+    <path
+        android:fillColor="#E0E0E0"
+        android:pathData="M66,28
+            Q64,22 66,16
+            Q68,22 66,28
+            Z" />
+</vector>
