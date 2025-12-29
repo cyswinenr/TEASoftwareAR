@@ -53,6 +53,7 @@ class DataSubmissionService(private val context: Context) {
                 put("classNumber", studentPrefs.getString("classNumber", "") ?: "")
                 put("date", studentPrefs.getString("date", "") ?: "")
                 put("memberCount", studentPrefs.getInt("memberCount", 0))
+                put("groupNumber", studentPrefs.getInt("groupNumber", 0))
                 val memberNames = JSONArray()
                 for (i in 0 until 10) {
                     val name = studentPrefs.getString("memberName_$i", "") ?: ""

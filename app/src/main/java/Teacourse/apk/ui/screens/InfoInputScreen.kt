@@ -62,11 +62,16 @@ fun InfoInputScreen(
             }
         )
     }
+    var groupNumber by remember { 
+        mutableStateOf(sharedPreferences.getInt("groupNumber", 0))
+    }
     var gradeExpanded by remember { mutableStateOf(false) }
     var memberCountExpanded by remember { mutableStateOf(false) }
+    var groupNumberExpanded by remember { mutableStateOf(false) }
     
     val gradeOptions = listOf("高一", "高二")
     val memberCountOptions = (1..10).toList()
+    val groupNumberOptions = (1..12).toList()
     
     val scrollState = rememberScrollState()
     
@@ -78,6 +83,7 @@ fun InfoInputScreen(
             putString("classNumber", classNumber)
             putString("date", date)
             putInt("memberCount", selectedMemberCount)
+            putInt("groupNumber", groupNumber)
             memberNames.forEachIndexed { index, name ->
                 putString("memberName_$index", name)
             }
@@ -424,6 +430,117 @@ fun InfoInputScreen(
                 }
             }
             
+            // 小组编号选择
+            ExposedDropdownMenuBox(
+                expanded = groupNumberExpanded,
+                onExpandedChange = { groupNumberExpanded = !groupNumberExpanded },
+                modifier = Modifier.fillMaxWidth(0.8f)
+            ) {
+                OutlinedTextField(
+                    value = if (groupNumber == 0) "" else groupNumber.toString(),
+                    onValueChange = { },
+                    readOnly = true,
+                    label = { 
+                        Text(
+                            "小组编号", 
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Medium
+                        ) 
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(70.dp)
+                        .menuAnchor(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(0xFF4CAF50),
+                        unfocusedBorderColor = Color(0xFF81C784),
+                        focusedContainerColor = Color(0xFFF1F8F4),
+                        unfocusedContainerColor = Color.White,
+                        focusedLabelColor = Color(0xFF2E7D32),
+                        unfocusedLabelColor = Color(0xFF757575)
+                    ),
+                    textStyle = MaterialTheme.typography.bodyLarge.copy(
+                        fontSize = 20.sp,
+                        fontWeight = if (groupNumber > 0) FontWeight.SemiBold else FontWeight.Normal,
+                        color = if (groupNumber > 0) Color(0xFF2E7D32) else Color(0xFF9E9E9E)
+                    ),
+                    trailingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.ArrowDropDown,
+                            contentDescription = null,
+                            tint = if (groupNumberExpanded) Color(0xFF4CAF50) else Color(0xFF81C784),
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
+                )
+                
+                ExposedDropdownMenu(
+                    expanded = groupNumberExpanded,
+                    onDismissRequest = { groupNumberExpanded = false },
+                    modifier = Modifier
+                        .widthIn(max = 250.dp)
+                        .shadow(
+                            elevation = 12.dp,
+                            shape = RoundedCornerShape(12.dp),
+                            spotColor = Color(0x40000000)
+                        ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    groupNumberOptions.forEachIndexed { index, number ->
+                        val isSelected = groupNumber == number
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (isSelected) Color(0xFFE8F5E9) else Color.White
+                            ),
+                            elevation = CardDefaults.cardElevation(
+                                defaultElevation = if (isSelected) 2.dp else 0.dp
+                            )
+                        ) {
+                            DropdownMenuItem(
+                                text = {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "小组 $number",
+                                            fontSize = 20.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                            color = if (isSelected) Color(0xFF2E7D32) else Color(0xFF424242),
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                        if (isSelected) {
+                                            Icon(
+                                                imageVector = Icons.Default.Check,
+                                                contentDescription = "已选择",
+                                                tint = Color(0xFF4CAF50),
+                                                modifier = Modifier.size(24.dp)
+                                            )
+                                        }
+                                    }
+                                },
+                                onClick = {
+                                    groupNumber = number
+                                    groupNumberExpanded = false
+                                },
+                                colors = MenuDefaults.itemColors(
+                                    textColor = Color.Transparent,
+                                    leadingIconColor = Color.Transparent,
+                                    trailingIconColor = Color.Transparent
+                                ),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                }
+            }
+            
             // 日期输入
             OutlinedTextField(
                 value = date,
@@ -545,7 +662,10 @@ fun InfoInputScreen(
                 
                 // 下一页按钮
                 Button(
-                    onClick = onNextClick,
+                    onClick = {
+                        saveData()
+                        onNextClick()
+                    },
                     modifier = Modifier
                         .weight(1f)
                         .height(60.dp),
