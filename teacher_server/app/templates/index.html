@@ -43,12 +43,16 @@
     <table class="table">
         <thead>
             <tr>
-                <th>提交ID</th>
                 <th>学校</th>
                 <th>年级</th>
                 <th>班级</th>
                 <th>活动日期</th>
                 <th>成员人数</th>
+                <th>任务一</th>
+                <th>任务二</th>
+                <th>思考题一</th>
+                <th>思考题二</th>
+                <th>创意题</th>
                 <th>提交时间</th>
                 <th>操作</th>
             </tr>
@@ -56,12 +60,71 @@
         <tbody>
             {% for student in students %}
             <tr>
-                <td>{{ student.submission_id }}</td>
                 <td>{{ student.school }}</td>
                 <td>{{ student.grade }}</td>
                 <td>{{ student.class_number }}班</td>
                 <td>{{ student.activity_date }}</td>
                 <td>{{ student.member_count }}人</td>
+                <td style="text-align: center;">
+                    {% if student.task1 %}
+                        {% set task1_has_content = student.task1.tea_name or student.task1.teacher_tea_name or student.task1.tea_category or student.task1.water_temperature or student.task1.brewing_duration or student.task1.reflection_answer %}
+                        {% set task1_records = student.task1.get_sensory_records() %}
+                        {% set task1_has_sensory = task1_records.get('dryTea', {}).get('color') or task1_records.get('dryTea', {}).get('aroma') or task1_records.get('teaLiquor', {}).get('color') or task1_records.get('spentLeaves', {}).get('color') %}
+                        {% if task1_has_content or task1_has_sensory %}
+                            {% set task1_chars = student.get_task1_char_count() %}
+                            <span style="color: #4CAF50; font-weight: bold; font-size: 18px;">✓</span>
+                            <span style="color: #666; font-size: 12px; margin-left: 4px;">{{ task1_chars }}字</span>
+                        {% else %}
+                            <span style="color: #F44336; font-weight: bold; font-size: 18px;">✗</span>
+                        {% endif %}
+                    {% else %}
+                        <span style="color: #F44336; font-weight: bold; font-size: 18px;">✗</span>
+                    {% endif %}
+                </td>
+                <td style="text-align: center;">
+                    {% if student.task2 %}
+                        {% set task2_has_content = student.task2.tea_name or student.task2.water_temperature or student.task2.steeping_duration or student.task2.tea_color or student.task2.tea_aroma or student.task2.tea_taste or student.task2.reflection_answer or student.task2.meets_expectation or student.task2.not_meets_expectation %}
+                        {% if task2_has_content %}
+                            {% set task2_chars = student.get_task2_char_count() %}
+                            <span style="color: #4CAF50; font-weight: bold; font-size: 18px;">✓</span>
+                            <span style="color: #666; font-size: 12px; margin-left: 4px;">{{ task2_chars }}字</span>
+                        {% else %}
+                            <span style="color: #F44336; font-weight: bold; font-size: 18px;">✗</span>
+                        {% endif %}
+                    {% else %}
+                        <span style="color: #F44336; font-weight: bold; font-size: 18px;">✗</span>
+                    {% endif %}
+                </td>
+                <td style="text-align: center;">
+                    {% set thinking1 = student.thinking_questions | selectattr('question_type', 'equalto', 'thinking1') | first %}
+                    {% if thinking1 and (thinking1.answer and thinking1.answer.strip()) %}
+                        {% set thinking1_chars = student.get_thinking_char_count('thinking1') %}
+                        <span style="color: #4CAF50; font-weight: bold; font-size: 18px;">✓</span>
+                        <span style="color: #666; font-size: 12px; margin-left: 4px;">{{ thinking1_chars }}字</span>
+                    {% else %}
+                        <span style="color: #F44336; font-weight: bold; font-size: 18px;">✗</span>
+                    {% endif %}
+                </td>
+                <td style="text-align: center;">
+                    {% set thinking2 = student.thinking_questions | selectattr('question_type', 'equalto', 'thinking2') | first %}
+                    {% if thinking2 and (thinking2.answer and thinking2.answer.strip()) %}
+                        {% set thinking2_chars = student.get_thinking_char_count('thinking2') %}
+                        <span style="color: #4CAF50; font-weight: bold; font-size: 18px;">✓</span>
+                        <span style="color: #666; font-size: 12px; margin-left: 4px;">{{ thinking2_chars }}字</span>
+                    {% else %}
+                        <span style="color: #F44336; font-weight: bold; font-size: 18px;">✗</span>
+                    {% endif %}
+                </td>
+                <td style="text-align: center;">
+                    {% set creative = student.thinking_questions | selectattr('question_type', 'equalto', 'creative') | first %}
+                    {% if creative and (creative.answer and creative.answer.strip()) %}
+                        {% set creative_chars = student.get_thinking_char_count('creative') %}
+                        <span style="color: #4CAF50; font-weight: bold; font-size: 18px;">✓</span>
+                        <span style="color: #666; font-size: 12px; margin-left: 4px;">{{ creative_chars }}字</span>
+                    {% else %}
+                        <span style="color: #F44336; font-weight: bold; font-size: 18px;">✗</span>
+                    {% endif %}
+                </td>
                 <td>{{ student.submit_time.strftime('%Y-%m-%d %H:%M') if student.submit_time else '' }}</td>
                 <td>
                     <div style="display: flex; gap: 8px;">
@@ -76,7 +139,7 @@
             </tr>
             {% else %}
             <tr>
-                <td colspan="8" style="text-align: center; padding: 40px;">
+                <td colspan="12" style="text-align: center; padding: 40px;">
                     暂无数据
                 </td>
             </tr>

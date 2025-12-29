@@ -27,8 +27,13 @@ def index():
     start_date = request.args.get('start_date', '')
     end_date = request.args.get('end_date', '')
     
-    # 构建查询
-    query = StudentGroup.query
+    # 构建查询，使用 eager loading 避免 N+1 查询问题
+    from sqlalchemy.orm import joinedload
+    query = StudentGroup.query.options(
+        joinedload(StudentGroup.task1),
+        joinedload(StudentGroup.task2),
+        joinedload(StudentGroup.thinking_questions)
+    )
     
     if school:
         query = query.filter(StudentGroup.school.contains(school))

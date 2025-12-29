@@ -41,6 +41,55 @@ class StudentGroup(db.Model):
             'submit_time': self.submit_time.isoformat() if self.submit_time else None,
             'version': self.version
         }
+    
+    def get_task1_char_count(self):
+        """计算任务一的总字符数"""
+        if not self.task1:
+            return 0
+        
+        count = 0
+        if self.task1.tea_name:
+            count += len(self.task1.tea_name)
+        if self.task1.teacher_tea_name:
+            count += len(self.task1.teacher_tea_name)
+        if self.task1.reflection_answer:
+            count += len(self.task1.reflection_answer)
+        
+        # 统计感官记录
+        records = self.task1.get_sensory_records()
+        for key, value in records.items():
+            if value:
+                for sub_key, sub_value in value.items():
+                    if sub_value:
+                        count += len(sub_value)
+        
+        return count
+    
+    def get_task2_char_count(self):
+        """计算任务二的总字符数"""
+        if not self.task2:
+            return 0
+        
+        count = 0
+        if self.task2.tea_name:
+            count += len(self.task2.tea_name)
+        if self.task2.tea_color:
+            count += len(self.task2.tea_color)
+        if self.task2.tea_aroma:
+            count += len(self.task2.tea_aroma)
+        if self.task2.tea_taste:
+            count += len(self.task2.tea_taste)
+        if self.task2.reflection_answer:
+            count += len(self.task2.reflection_answer)
+        
+        return count
+    
+    def get_thinking_char_count(self, question_type):
+        """计算思考题的字符数"""
+        thinking = next((t for t in self.thinking_questions if t.question_type == question_type), None)
+        if thinking and thinking.answer:
+            return len(thinking.answer.strip())
+        return 0
 
 
 class GroupMember(db.Model):
