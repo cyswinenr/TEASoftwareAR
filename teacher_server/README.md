@@ -101,7 +101,7 @@ python run.py
 ```
 
 ### 5. 访问Web界面
-打开浏览器访问：`http://localhost:5000`
+打开浏览器访问：`http://localhost:8888`
 
 ## API接口
 

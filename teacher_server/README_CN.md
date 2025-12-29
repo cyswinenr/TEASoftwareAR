@@ -20,18 +20,18 @@ python init_db.py
 python run.py
 ```
 
-服务器将在 `http://0.0.0.0:5000` 启动
+服务器将在 `http://0.0.0.0:8888` 启动
 
 ### 4. 访问Web界面
 
-打开浏览器访问：`http://localhost:5000`
+打开浏览器访问：`http://localhost:8888`
 
 ## API接口
 
 ### 提交学生数据
 
 ```
-POST http://localhost:5000/api/submit
+POST http://localhost:8888/api/submit
 Content-Type: application/json
 
 {
@@ -55,13 +55,13 @@ Content-Type: application/json
 ### 获取学生列表
 
 ```
-GET http://localhost:5000/api/students?page=1&limit=20
+GET http://localhost:8888/api/students?page=1&limit=20
 ```
 
 ### 获取学生详情
 
 ```
-GET http://localhost:5000/api/students/{submission_id}
+GET http://localhost:8888/api/students/{submission_id}
 ```
 
 ## 项目结构

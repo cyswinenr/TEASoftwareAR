@@ -6,7 +6,6 @@ from app import db
 from app.models import StudentGroup, GroupMember, Task1Data, Task2Data, ThinkingQuestion, Photo
 from app.services.data_service import delete_student_data
 from pathlib import Path
-from pathlib import Path
 import sys
 # 添加项目根目录到路径
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -17,12 +16,16 @@ web_bp = Blueprint('web', __name__)
 @web_bp.route('/')
 def index():
     """学生列表页"""
+    from datetime import datetime
+    
     # 获取查询参数
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', Config.ITEMS_PER_PAGE, type=int)
     school = request.args.get('school', '')
     grade = request.args.get('grade', '')
     class_number = request.args.get('class_number', '')
+    start_date = request.args.get('start_date', '')
+    end_date = request.args.get('end_date', '')
     
     # 构建查询
     query = StudentGroup.query
@@ -33,6 +36,23 @@ def index():
         query = query.filter(StudentGroup.grade == grade)
     if class_number:
         query = query.filter(StudentGroup.class_number == class_number)
+    
+    # 按提交时间筛选
+    if start_date:
+        try:
+            start_datetime = datetime.strptime(start_date, '%Y-%m-%d')
+            query = query.filter(StudentGroup.submit_time >= start_datetime)
+        except ValueError:
+            pass  # 忽略无效的日期格式
+    
+    if end_date:
+        try:
+            # 结束日期包含整天，所以设置为当天的23:59:59
+            end_datetime = datetime.strptime(end_date, '%Y-%m-%d')
+            end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
+            query = query.filter(StudentGroup.submit_time <= end_datetime)
+        except ValueError:
+            pass  # 忽略无效的日期格式
     
     # 按提交时间倒序
     query = query.order_by(StudentGroup.submit_time.desc())
@@ -49,7 +69,9 @@ def index():
                          students=pagination.items,
                          school=school,
                          grade=grade,
-                         class_number=class_number)
+                         class_number=class_number,
+                         start_date=start_date,
+                         end_date=end_date)
 
 @web_bp.route('/student/<submission_id>')
 def student_detail(submission_id):
@@ -61,11 +83,15 @@ def student_detail(submission_id):
 @web_bp.route('/api/students')
 def api_students():
     """API: 获取学生列表"""
+    from datetime import datetime
+    
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('limit', Config.ITEMS_PER_PAGE, type=int)
     school = request.args.get('school', '')
     grade = request.args.get('grade', '')
     class_number = request.args.get('class_number', '')
+    start_date = request.args.get('start_date', '')
+    end_date = request.args.get('end_date', '')
     
     query = StudentGroup.query
     
@@ -75,6 +101,23 @@ def api_students():
         query = query.filter(StudentGroup.grade == grade)
     if class_number:
         query = query.filter(StudentGroup.class_number == class_number)
+    
+    # 按提交时间筛选
+    if start_date:
+        try:
+            start_datetime = datetime.strptime(start_date, '%Y-%m-%d')
+            query = query.filter(StudentGroup.submit_time >= start_datetime)
+        except ValueError:
+            pass  # 忽略无效的日期格式
+    
+    if end_date:
+        try:
+            # 结束日期包含整天，所以设置为当天的23:59:59
+            end_datetime = datetime.strptime(end_date, '%Y-%m-%d')
+            end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
+            query = query.filter(StudentGroup.submit_time <= end_datetime)
+        except ValueError:
+            pass  # 忽略无效的日期格式
     
     query = query.order_by(StudentGroup.submit_time.desc())
     
