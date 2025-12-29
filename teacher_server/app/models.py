@@ -16,6 +16,7 @@ class StudentGroup(db.Model):
     class_number = db.Column(db.String(10), nullable=False, index=True)
     activity_date = db.Column(db.Date, nullable=False, index=True)
     member_count = db.Column(db.Integer, nullable=False)
+    group_number = db.Column(db.Integer, nullable=True, index=True)  # 小组编号
     submit_time = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     version = db.Column(db.String(10), default='1.0')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -38,6 +39,7 @@ class StudentGroup(db.Model):
             'class_number': self.class_number,
             'activity_date': self.activity_date.isoformat() if self.activity_date else None,
             'member_count': self.member_count,
+            'group_number': self.group_number,
             'submit_time': self.submit_time.isoformat() if self.submit_time else None,
             'version': self.version
         }

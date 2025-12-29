@@ -7,6 +7,14 @@
     <h2>学生基本信息</h2>
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
         <div>
+            <strong>小组编号：</strong>
+            {% if group.group_number %}
+                <span style="font-weight: bold; color: #2E7D32; font-size: 18px;">{{ group.group_number }}</span>
+            {% else %}
+                <span style="color: #999;">未设置</span>
+            {% endif %}
+        </div>
+        <div>
             <strong>学校：</strong>{{ group.school }}
         </div>
         <div>

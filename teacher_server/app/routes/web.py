@@ -6,6 +6,7 @@ from app import db
 from app.models import StudentGroup, GroupMember, Task1Data, Task2Data, ThinkingQuestion, Photo
 from app.services.data_service import delete_student_data
 from pathlib import Path
+from sqlalchemy import case
 import sys
 # 添加项目根目录到路径
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -59,8 +60,12 @@ def index():
         except ValueError:
             pass  # 忽略无效的日期格式
     
-    # 按提交时间倒序
-    query = query.order_by(StudentGroup.submit_time.desc())
+    # 按小组编号升序，然后按提交时间倒序
+    # 使用case语句将NULL值排在最后（设置为999999）
+    query = query.order_by(
+        case((StudentGroup.group_number.is_(None), 999999), else_=StudentGroup.group_number).asc(),
+        StudentGroup.submit_time.desc()
+    )
     
     # 分页
     pagination = query.paginate(
@@ -124,7 +129,12 @@ def api_students():
         except ValueError:
             pass  # 忽略无效的日期格式
     
-    query = query.order_by(StudentGroup.submit_time.desc())
+    # 按小组编号升序，然后按提交时间倒序
+    # 使用case语句将NULL值排在最后（设置为999999）
+    query = query.order_by(
+        case((StudentGroup.group_number.is_(None), 999999), else_=StudentGroup.group_number).asc(),
+        StudentGroup.submit_time.desc()
+    )
     
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
     

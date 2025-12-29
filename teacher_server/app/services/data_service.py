@@ -81,10 +81,14 @@ def find_or_create_student_group(data, submission_id=None):
         student_info = data.get('studentInfo', {})
         
         # 验证数据
+        grade_value = student_info.get('grade', '').strip()
         if not validate_school(student_info.get('school')):
             return None, "学校信息无效"
-        if not validate_grade(student_info.get('grade')):
-            return None, "年级信息无效"
+        if not validate_grade(grade_value):
+            if not grade_value:
+                return None, "年级信息无效：请选择年级（高一或高二）"
+            else:
+                return None, f"年级信息无效：'{grade_value}' 不是有效的年级，请选择'高一'或'高二'"
         if not validate_class_number(student_info.get('classNumber')):
             return None, "班级信息无效"
         if not validate_date(student_info.get('date')):
@@ -101,6 +105,7 @@ def find_or_create_student_group(data, submission_id=None):
         school = student_info.get('school')
         grade = student_info.get('grade')
         class_number = student_info.get('classNumber')
+        group_number = student_info.get('groupNumber', 0)  # 获取小组编号
         
         # 生成固定的组标识码
         group_code = generate_group_code(school, grade, class_number, member_names)
@@ -120,6 +125,8 @@ def find_or_create_student_group(data, submission_id=None):
                     group.submit_time = datetime.utcnow()
                     group.updated_at = datetime.utcnow()
                     group.member_count = len(member_names)
+                    if group_number > 0:
+                        group.group_number = group_number
                     
                     # 更新成员信息
                     GroupMember.query.filter_by(group_id=group.id).delete()
@@ -172,7 +179,8 @@ def find_or_create_student_group(data, submission_id=None):
             grade=grade,
             class_number=class_number,
             activity_date=activity_date,
-            member_count=len(member_names)
+            member_count=len(member_names),
+            group_number=group_number if group_number > 0 else None
         )
         
         db.session.add(group)

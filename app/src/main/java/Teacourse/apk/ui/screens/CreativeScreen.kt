@@ -281,7 +281,7 @@ fun CreativeScreen(onBackClick: () -> Unit) {
                             .width(120.dp)
                             .height(50.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFBA68C8)
+                            containerColor = Color(0xFF2E7D32)
                         ),
                         shape = RoundedCornerShape(12.dp)
                     ) {

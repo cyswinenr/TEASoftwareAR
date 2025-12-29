@@ -278,7 +278,7 @@ fun Thinking1Screen(onBackClick: () -> Unit) {
                             .width(120.dp)
                             .height(50.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFFFB74D)
+                            containerColor = Color(0xFF2E7D32)
                         ),
                         shape = RoundedCornerShape(12.dp)
                     ) {

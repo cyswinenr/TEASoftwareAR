@@ -130,7 +130,7 @@ fun InfoInputScreen(
                     modifier = Modifier
                         .height(50.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF81C784)
+                        containerColor = Color(0xFF2E7D32)
                     ),
                     shape = RoundedCornerShape(12.dp),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)

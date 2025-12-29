@@ -315,7 +315,7 @@ fun Task1Screen(onBackClick: () -> Unit) {
                             .width(120.dp)
                             .height(50.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF81C784)
+                            containerColor = Color(0xFF2E7D32)
                         ),
                         shape = RoundedCornerShape(12.dp)
                     ) {

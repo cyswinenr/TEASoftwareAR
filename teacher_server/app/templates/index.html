@@ -43,6 +43,7 @@
     <table class="table">
         <thead>
             <tr>
+                <th>小组编号</th>
                 <th>学校</th>
                 <th>年级</th>
                 <th>班级</th>
@@ -60,6 +61,13 @@
         <tbody>
             {% for student in students %}
             <tr>
+                <td style="text-align: center; font-weight: bold; color: #2E7D32;">
+                    {% if student.group_number %}
+                        {{ student.group_number }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
                 <td>{{ student.school }}</td>
                 <td>{{ student.grade }}</td>
                 <td>{{ student.class_number }}班</td>
@@ -139,7 +147,7 @@
             </tr>
             {% else %}
             <tr>
-                <td colspan="12" style="text-align: center; padding: 40px;">
+                <td colspan="13" style="text-align: center; padding: 40px;">
                     暂无数据
                 </td>
             </tr>
