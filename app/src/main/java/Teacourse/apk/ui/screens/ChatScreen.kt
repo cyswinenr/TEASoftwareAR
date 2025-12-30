@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,11 +25,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import Teacourse.apk.utils.MoonshotApiService
-
-data class ChatMessage(
-    val role: String, // "user" or "assistant"
-    val content: String
-)
+import Teacourse.apk.utils.ChatHistoryManager
+import Teacourse.apk.utils.ChatMessage
 
 @Composable
 fun ChatScreen(
@@ -37,25 +35,58 @@ fun ChatScreen(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val listState = rememberLazyListState()
-    
+
+    // 聊天历史管理器
+    val historyManager = remember { ChatHistoryManager(context) }
+
     // 对话历史消息（用于 API 调用）
     val historyMessages = remember { mutableStateListOf<JSONObject>() }
-    
+
     // UI 显示的对话消息
     val chatMessages = remember { mutableStateListOf<ChatMessage>() }
-    
+
     // 输入框状态
     var inputText by remember { mutableStateOf("") }
-    
+
     // 加载状态
     var isLoading by remember { mutableStateOf(false) }
-    
+
+    // 显示清除历史确认对话框
+    var showClearDialog by remember { mutableStateOf(false) }
+
     // API 服务
     val apiService = remember { MoonshotApiService() }
-    
-    // 当有新消息时，滚动到底部
+
+    // 首次加载时，从本地存储加载历史记录
+    LaunchedEffect(Unit) {
+        val savedMessages = historyManager.loadChatMessages()
+        if (savedMessages.isNotEmpty()) {
+            chatMessages.clear()
+            chatMessages.addAll(savedMessages)
+
+            // 同时恢复 API 历史消息
+            historyMessages.clear()
+            savedMessages.forEach { message ->
+                historyMessages.add(JSONObject().apply {
+                    put("role", message.role)
+                    put("content", message.content)
+                })
+            }
+
+            // 滚动到最新消息
+            if (chatMessages.isNotEmpty()) {
+                listState.animateScrollToItem(chatMessages.size - 1)
+            }
+        }
+    }
+
+    // 当有新消息时，滚动到底部并保存历史记录
     LaunchedEffect(chatMessages.size) {
         if (chatMessages.isNotEmpty()) {
+            // 保存到本地存储
+            historyManager.saveChatMessages(chatMessages.toList())
+
+            // 滚动到底部
             coroutineScope.launch {
                 listState.animateScrollToItem(chatMessages.size - 1)
             }
@@ -108,9 +139,21 @@ fun ChatScreen(
                     modifier = Modifier.weight(1f),
                     textAlign = TextAlign.Center
                 )
-                
-                // 占位符，保持标题居中
-                Spacer(modifier = Modifier.size(48.dp))
+
+                // 清除历史记录按钮
+                IconButton(
+                    onClick = {
+                        showClearDialog = true
+                    },
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "清除历史",
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
             
             // 对话列表
@@ -301,6 +344,41 @@ fun ChatScreen(
                     }
                 }
             }
+        }
+
+        // 清除历史记录确认对话框
+        if (showClearDialog) {
+            AlertDialog(
+                onDismissRequest = { showClearDialog = false },
+                title = {
+                    Text(
+                        text = "清除历史记录",
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                text = {
+                    Text("确定要清除所有聊天历史记录吗？此操作不可撤销。")
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            chatMessages.clear()
+                            historyMessages.clear()
+                            historyManager.clearChatHistory()
+                            showClearDialog = false
+                        }
+                    ) {
+                        Text("确定", color = Color(0xFF2E7D32))
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = { showClearDialog = false }
+                    ) {
+                        Text("取消", color = Color(0xFF757575))
+                    }
+                }
+            )
         }
     }
 }
