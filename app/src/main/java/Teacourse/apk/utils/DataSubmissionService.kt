@@ -10,6 +10,7 @@ import org.json.JSONObject
 import java.io.File
 import java.io.IOException
 import java.util.concurrent.TimeUnit
+import Teacourse.apk.utils.ChatHistoryManager
 
 class DataSubmissionService(private val context: Context) {
     private val client = OkHttpClient.Builder()
@@ -205,7 +206,20 @@ class DataSubmissionService(private val context: Context) {
                 put("photos", creativePhotos)
             }
             json.put("creative", creative)
-            
+
+            // 智能体问答记录
+            val chatHistoryManager = ChatHistoryManager(context)
+            val chatHistory = chatHistoryManager.getChatHistoryAsJson()
+            json.put("chatHistory", chatHistory)
+
+            // 学生提问统计
+            val userQuestions = chatHistoryManager.getUserQuestions()
+            val questionsArray = JSONArray()
+            userQuestions.forEach { question ->
+                questionsArray.put(question)
+            }
+            json.put("studentQuestions", questionsArray)
+
             // 添加提交时间戳
             json.put("submitTime", System.currentTimeMillis())
             

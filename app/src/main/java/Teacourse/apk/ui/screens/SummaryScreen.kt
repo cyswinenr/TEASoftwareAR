@@ -24,6 +24,8 @@ import androidx.compose.ui.unit.sp
 import android.content.Context
 import android.content.SharedPreferences
 import android.graphics.BitmapFactory
+import Teacourse.apk.utils.ChatHistoryManager
+import Teacourse.apk.utils.ChatMessage
 
 @Composable
 fun SummaryScreen(
@@ -97,7 +99,12 @@ fun SummaryScreen(
             "photoPaths" to (thinking2Prefs.getStringSet("photoPaths", setOf()) ?: setOf()).toList()
         )
     }
-    
+
+    // 智能体问答记录
+    val chatHistoryManager = remember { ChatHistoryManager(context) }
+    val chatMessages = remember { chatHistoryManager.loadChatMessages() }
+    val studentQuestions = remember { chatHistoryManager.getUserQuestions() }
+
     val scrollState = rememberScrollState()
     
     Box(
@@ -367,6 +374,111 @@ fun SummaryScreen(
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.height(30.dp))
+
+            // 智能体问答记录汇总
+            SummarySection(
+                title = "5. 智能体问答记录",
+                color = Color(0xFF9C27B0),
+                onEditClick = { }
+            ) {
+                // 统计信息
+                SummarySubsection("问答统计") {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(20.dp)
+                    ) {
+                        SummaryStatCard("对话轮次", "${chatMessages.size / 2}", Color(0xFF4CAF50))
+                        SummaryStatCard("学生提问", "${studentQuestions.size}", Color(0xFF2196F3))
+                        SummaryStatCard("AI回答", "${chatMessages.size - studentQuestions.size}", Color(0xFF9C27B0))
+                    }
+                }
+
+                // 学生提问列表
+                if (studentQuestions.isNotEmpty()) {
+                    SummarySubsection("学生提问列表") {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            studentQuestions.forEachIndexed { index, question ->
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(8.dp),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = Color(0xFFF5F5DC)
+                                    )
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(12.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                        verticalAlignment = Alignment.Top
+                                    ) {
+                                        Text(
+                                            text = "${index + 1}.",
+                                            fontSize = 16.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFF9C27B0),
+                                            modifier = Modifier.width(30.dp)
+                                        )
+                                        Text(
+                                            text = question,
+                                            fontSize = 15.sp,
+                                            color = Color(0xFF424242),
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 完整对话记录
+                if (chatMessages.isNotEmpty()) {
+                    SummarySubsection("完整对话记录") {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            chatMessages.forEachIndexed { index, message ->
+                                val isUser = message.role == "user"
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = if (isUser) Color(0xFFE8F5E9) else Color(0xFFF3E5F5)
+                                    )
+                                ) {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp)
+                                    ) {
+                                        // 角色标签
+                                        Text(
+                                            text = if (isUser) "👤 学生" else "🤖 AI助手",
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (isUser) Color(0xFF2E7D32) else Color(0xFF7B1FA2),
+                                            modifier = Modifier.padding(bottom = 8.dp)
+                                        )
+                                        // 消息内容
+                                        Text(
+                                            text = message.content,
+                                            fontSize = 15.sp,
+                                            color = Color(0xFF212121),
+                                            lineHeight = 22.sp
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -598,3 +710,44 @@ fun PhotoGrid(photoPaths: List<String>) {
     }
 }
 
+
+@Composable
+fun RowScope.SummaryStatCard(
+    title: String,
+    value: String,
+    color: Color
+) {
+    Card(
+        modifier = Modifier
+            .weight(1f)
+            .height(80.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = color.copy(alpha = 0.1f)
+        ),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            color.copy(alpha = 0.3f)
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = value,
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                color = color
+            )
+            Text(
+                text = title,
+                fontSize = 13.sp,
+                color = Color(0xFF757575)
+            )
+        }
+    }
+}
