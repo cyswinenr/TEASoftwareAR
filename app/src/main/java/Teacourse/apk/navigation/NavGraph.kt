@@ -14,6 +14,7 @@ import Teacourse.apk.ui.screens.Thinking1Screen
 import Teacourse.apk.ui.screens.Thinking2Screen
 import Teacourse.apk.ui.screens.CreativeScreen
 import Teacourse.apk.ui.screens.SummaryScreen
+import Teacourse.apk.ui.screens.ChatScreen
 
 sealed class Screen(val route: String) {
     object Splash : Screen("splash")
@@ -25,6 +26,7 @@ sealed class Screen(val route: String) {
     object Thinking2 : Screen("thinking_2")
     object Creative : Screen("creative")
     object Summary : Screen("summary")
+    object Chat : Screen("chat")
 }
 
 @Composable
@@ -68,6 +70,9 @@ fun NavGraph(navController: NavHostController) {
                 },
                 onSummaryClick = {
                     navController.navigate(Screen.Summary.route)
+                },
+                onChatClick = {
+                    navController.navigate(Screen.Chat.route)
                 }
             )
         }
@@ -136,6 +141,14 @@ fun NavGraph(navController: NavHostController) {
                     navController.navigate(Screen.Thinking2.route) {
                         popUpTo(Screen.Summary.route)
                     }
+                }
+            )
+        }
+        
+        composable(Screen.Chat.route) {
+            ChatScreen(
+                onBackClick = {
+                    navController.popBackStack()
                 }
             )
         }

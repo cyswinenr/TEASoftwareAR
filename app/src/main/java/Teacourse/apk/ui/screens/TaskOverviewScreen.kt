@@ -44,7 +44,8 @@ data class TaskItem(
 fun TaskOverviewScreen(
     onTaskClick: (String) -> Unit,
     onBackClick: () -> Unit = {},
-    onSummaryClick: () -> Unit = {}
+    onSummaryClick: () -> Unit = {},
+    onChatClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -214,6 +215,25 @@ fun TaskOverviewScreen(
                             contentDescription = "服务器配置",
                             tint = Color.White,
                             modifier = Modifier.size(24.dp)
+                        )
+                    }
+                    
+                    // 智能体问答按钮
+                    Button(
+                        onClick = onChatClick,
+                        modifier = Modifier
+                            .height(50.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF9C27B0)
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        Text(
+                            text = "智能体问答",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
                         )
                     }
                     
