@@ -381,7 +381,8 @@ fun SummaryScreen(
             SummarySection(
                 title = "5. 智能体问答记录",
                 color = Color(0xFF9C27B0),
-                onEditClick = { }
+                onEditClick = { },
+                showEditButton = false  // 不显示编辑按钮
             ) {
                 // 统计信息
                 SummarySubsection("问答统计") {
@@ -488,6 +489,7 @@ fun SummarySection(
     title: String,
     color: Color,
     onEditClick: () -> Unit,
+    showEditButton: Boolean = true,  // 默认显示编辑按钮
     content: @Composable ColumnScope.() -> Unit
 ) {
     Card(
@@ -514,14 +516,17 @@ fun SummarySection(
                     fontWeight = FontWeight.Bold,
                     color = color
                 )
-                
-                TextButton(
-                    onClick = onEditClick,
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = color
-                    )
-                ) {
-                    Text("编辑", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+
+                // 只在showEditButton为true时显示编辑按钮
+                if (showEditButton) {
+                    TextButton(
+                        onClick = onEditClick,
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = color
+                        )
+                    ) {
+                        Text("编辑", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
             

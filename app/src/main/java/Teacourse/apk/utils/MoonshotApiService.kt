@@ -95,7 +95,7 @@ class MoonshotApiService {
         return messages
     }
     
-    // 发送聊天请求
+    // 发送聊天请求（非流式）
     fun chat(
         input: String,
         historyMessages: MutableList<JSONObject>,
@@ -176,6 +176,139 @@ class MoonshotApiService {
             })
         } catch (e: Exception) {
             android.util.Log.e("MoonshotApiService", "发送请求异常", e)
+            onError("发送请求失败: ${e.message ?: "未知错误"}")
+        }
+    }
+
+    // 发送聊天请求（流式输出）
+    fun chatStream(
+        input: String,
+        historyMessages: MutableList<JSONObject>,
+        onChunk: (String) -> Unit,  // 每收到一个数据块就调用
+        onComplete: (String) -> Unit,  // 流结束时调用，返回完整内容
+        onError: (String) -> Unit
+    ) {
+        try {
+            val messages = makeMessages(input, historyMessages)
+
+            val requestBody = JSONObject().apply {
+                put("model", "kimi-k2-turbo-preview")
+                put("messages", messages)
+                put("temperature", 0.6)
+                put("stream", true)  // 启用流式输出
+            }
+
+            val mediaType = "application/json; charset=utf-8".toMediaType()
+            val body = requestBody.toString().toRequestBody(mediaType)
+
+            val request = Request.Builder()
+                .url("$baseUrl/chat/completions")
+                .post(body)
+                .addHeader("Content-Type", "application/json")
+                .addHeader("Authorization", "Bearer $apiKey")
+                .build()
+
+            android.util.Log.d("MoonshotApiService", "发送流式请求到: $baseUrl/chat/completions")
+
+            client.newCall(request).enqueue(object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    android.util.Log.e("MoonshotApiService", "流式请求失败", e)
+                    android.os.Handler(android.os.Looper.getMainLooper()).post {
+                        onError("网络错误: ${e.message ?: "未知错误"}")
+                    }
+                }
+
+                override fun onResponse(call: Call, response: Response) {
+                    try {
+                        android.util.Log.d("MoonshotApiService", "收到流式响应: code=${response.code}")
+
+                        if (!response.isSuccessful) {
+                            val errorBody = response.body?.string()
+                            android.util.Log.e("MoonshotApiService", "API 错误: ${response.code}, $errorBody")
+                            android.os.Handler(android.os.Looper.getMainLooper()).post {
+                                onError("API 错误: ${response.code} - ${errorBody ?: response.message}")
+                            }
+                            return
+                        }
+
+                        val responseBody = response.body ?: throw IOException("响应体为空")
+                        val fullContent = StringBuilder()
+                        val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
+
+                        // 逐行读取 SSE 响应
+                        responseBody.byteStream().bufferedReader().use { reader ->
+                            var line: String?
+                            while (reader.readLine().also { line = it } != null) {
+                                try {
+                                    val trimmedLine = line!!.trim()
+
+                                    // SSE 格式: "data: {...}"
+                                    if (trimmedLine.startsWith("data: ")) {
+                                        val jsonData = trimmedLine.substring(6)  // 移除 "data: " 前缀
+
+                                        // 检查是否是结束标记 [DONE]
+                                        if (jsonData == "[DONE]") {
+                                            android.util.Log.d("MoonshotApiService", "流式输出完成")
+                                            break
+                                        }
+
+                                        // 解析 JSON 数据
+                                        val jsonObject = JSONObject(jsonData)
+                                        val choices = jsonObject.getJSONArray("choices")
+
+                                        if (choices.length() > 0) {
+                                            val choice = choices.getJSONObject(0)
+                                            val delta = choice.optJSONObject("delta")
+
+                                            if (delta != null && delta.has("content")) {
+                                                val content = delta.getString("content")
+                                                fullContent.append(content)
+
+                                                // 在主线程回调增量内容
+                                                mainHandler.post {
+                                                    onChunk(content)
+                                                }
+                                            }
+
+                                            // 检查是否结束
+                                            val finishReason = choice.optString("finish_reason")
+                                            if (finishReason == "stop") {
+                                                android.util.Log.d("MoonshotApiService", "流式输出正常结束")
+                                            }
+                                        }
+                                    }
+                                } catch (e: Exception) {
+                                    android.util.Log.e("MoonshotApiService", "解析数据块失败: $line", e)
+                                }
+                            }
+                        }
+
+                        // 流结束，将完整内容添加到历史记录
+                        val completeContent = fullContent.toString()
+                        if (completeContent.isNotEmpty()) {
+                            historyMessages.add(JSONObject().apply {
+                                put("role", "assistant")
+                                put("content", completeContent)
+                            })
+                        }
+
+                        // 在主线程回调完成
+                        mainHandler.post {
+                            onComplete(completeContent)
+                        }
+
+                    } catch (e: Exception) {
+                        android.util.Log.e("MoonshotApiService", "处理流式响应失败", e)
+                        android.os.Handler(android.os.Looper.getMainLooper()).post {
+                            onError("处理响应失败: ${e.message}")
+                        }
+                    } finally {
+                        response.close()
+                    }
+                }
+            })
+        } catch (e: Exception) {
+            android.util.Log.e("MoonshotApiService", "发送流式请求异常", e)
             onError("发送请求失败: ${e.message ?: "未知错误"}")
         }
     }

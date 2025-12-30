@@ -313,22 +313,60 @@ fun ChatScreen(
                             if (inputText.isNotBlank() && !isLoading) {
                                 val userMessage = inputText.trim()
                                 inputText = ""
-                                
+
                                 // 添加用户消息到 UI
                                 chatMessages.add(ChatMessage("user", userMessage))
-                                
-                                // 发送请求
+
+                                // 发送流式请求
                                 isLoading = true
-                                apiService.chat(
+                                var assistantMessageIndex = -1  // 用于跟踪助手消息的位置
+
+                                apiService.chatStream(
                                     input = userMessage,
                                     historyMessages = historyMessages,
-                                    onSuccess = { response ->
+                                    onChunk = { chunk ->
+                                        // 第一次收到数据时，添加助手消息到 UI
+                                        if (assistantMessageIndex == -1) {
+                                            assistantMessageIndex = chatMessages.size
+                                            chatMessages.add(ChatMessage("assistant", chunk))
+                                        } else {
+                                            // 后续增量更新
+                                            if (chatMessages.size > assistantMessageIndex) {
+                                                val currentMessage = chatMessages[assistantMessageIndex]
+                                                chatMessages[assistantMessageIndex] = ChatMessage(
+                                                    currentMessage.role,
+                                                    currentMessage.content + chunk
+                                                )
+                                            }
+                                        }
+                                    },
+                                    onComplete = { fullContent ->
                                         isLoading = false
-                                        chatMessages.add(ChatMessage("assistant", response))
+                                        // 如果还没有添加到 UI，现在添加
+                                        if (assistantMessageIndex == -1) {
+                                            assistantMessageIndex = chatMessages.size
+                                            chatMessages.add(ChatMessage("assistant", fullContent))
+                                        } else {
+                                            // 确保最终内容正确
+                                            if (chatMessages.size > assistantMessageIndex) {
+                                                chatMessages[assistantMessageIndex] = ChatMessage("assistant", fullContent)
+                                            }
+                                        }
                                     },
                                     onError = { error ->
                                         isLoading = false
-                                        chatMessages.add(ChatMessage("assistant", "抱歉，发生了错误：$error"))
+                                        // 添加错误消息
+                                        if (assistantMessageIndex == -1) {
+                                            assistantMessageIndex = chatMessages.size
+                                        }
+                                        if (chatMessages.size > assistantMessageIndex) {
+                                            chatMessages[assistantMessageIndex] = ChatMessage(
+                                                "assistant",
+                                                "抱歉，发生了错误：$error"
+                                            )
+                                        } else {
+                                            chatMessages.add(ChatMessage("assistant", "抱歉，发生了错误：$error"))
+                                        }
                                     }
                                 )
                             }
