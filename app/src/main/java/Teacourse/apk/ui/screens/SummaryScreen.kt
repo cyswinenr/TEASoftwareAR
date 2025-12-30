@@ -100,9 +100,9 @@ fun SummaryScreen(
         )
     }
 
-    // 智能体问答记录
+    // 智能体问答记录（使用永久历史，不会被删除）
     val chatHistoryManager = remember { ChatHistoryManager(context) }
-    val chatMessages = remember { chatHistoryManager.loadChatMessages() }
+    val chatMessages = remember { chatHistoryManager.loadChatMessagesPermanent() }
     val studentQuestions = remember { chatHistoryManager.getUserQuestions() }
 
     val scrollState = rememberScrollState()

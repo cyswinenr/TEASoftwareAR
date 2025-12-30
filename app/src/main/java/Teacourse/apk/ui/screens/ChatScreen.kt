@@ -54,6 +54,10 @@ fun ChatScreen(
     // 显示清除历史确认对话框
     var showClearDialog by remember { mutableStateOf(false) }
 
+    // 用于区分加载历史和新增消息
+    var initialLoadSize by remember { mutableStateOf(0) }
+    var hasLoadedInitial by remember { mutableStateOf(false) }
+
     // API 服务
     val apiService = remember { MoonshotApiService() }
 
@@ -73,18 +77,30 @@ fun ChatScreen(
                 })
             }
 
+            // 记录初始加载的大小
+            initialLoadSize = chatMessages.size
+            hasLoadedInitial = true
+
             // 滚动到最新消息
             if (chatMessages.isNotEmpty()) {
                 listState.animateScrollToItem(chatMessages.size - 1)
             }
+        } else {
+            hasLoadedInitial = true
         }
     }
 
     // 当有新消息时，滚动到底部并保存历史记录
     LaunchedEffect(chatMessages.size) {
-        if (chatMessages.isNotEmpty()) {
-            // 保存到本地存储
+        if (chatMessages.isNotEmpty() && hasLoadedInitial) {
+            // 保存到临时历史（显示用）
             historyManager.saveChatMessages(chatMessages.toList())
+
+            // 只有当消息数量超过初始加载大小时，才追加到永久历史
+            if (chatMessages.size > initialLoadSize) {
+                val lastMessage = chatMessages.last()
+                historyManager.appendMessageToPermanent(lastMessage)
+            }
 
             // 滚动到底部
             coroutineScope.launch {
@@ -357,7 +373,31 @@ fun ChatScreen(
                     )
                 },
                 text = {
-                    Text("确定要清除所有聊天历史记录吗？此操作不可撤销。")
+                    Column {
+                        Text(
+                            text = "确定要清除聊天记录吗？",
+                            fontSize = 16.sp,
+                            color = Color(0xFF424242)
+                        )
+                        Text(
+                            text = "• 清除当前页面的对话显示",
+                            fontSize = 14.sp,
+                            color = Color(0xFF757575),
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                        Text(
+                            text = "• AI将重新开始，不记得之前的对话",
+                            fontSize = 14.sp,
+                            color = Color(0xFF757575)
+                        )
+                        Text(
+                            text = "• 汇总页面仍保留所有历史记录",
+                            fontSize = 14.sp,
+                            color = Color(0xFF4CAF50),
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
                 },
                 confirmButton = {
                     TextButton(
@@ -365,6 +405,7 @@ fun ChatScreen(
                             chatMessages.clear()
                             historyMessages.clear()
                             historyManager.clearChatHistory()
+                            initialLoadSize = 0  // 重置初始加载大小
                             showClearDialog = false
                         }
                     ) {
