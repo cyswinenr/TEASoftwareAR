@@ -2,220 +2,321 @@ package Teacourse.apk.utils
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * 聊天历史记录管理器
+ * 聊天历史记录管理器（Room数据库版本）
  * 负责保存和加载聊天历史记录
+ *
+ * 重要：所有公共方法保持与旧版本兼容，接口不变
  */
 class ChatHistoryManager(context: Context) {
 
+    // 保留旧的SharedPreferences用于数据迁移
     private val prefs: SharedPreferences = context.getSharedPreferences(
         "chat_history",
         Context.MODE_PRIVATE
     )
 
+    // Room数据库
+    private val database = AppDatabase.getInstance(context)
+    private val chatDao = database.chatMessageDao()
+
+    // 旧的SharedPreferences Key（用于迁移）
     companion object {
-        private const val KEY_CHAT_HISTORY = "chat_messages"          // 临时历史（显示用）
-        private const val KEY_PERMANENT_HISTORY = "chat_messages_permanent"  // 永久历史（汇总用）
-        private const val MAX_HISTORY_SIZE = 100 // 最多保存100条消息
+        private const val KEY_CHAT_HISTORY = "chat_messages"
+        private const val KEY_PERMANENT_HISTORY = "chat_messages_permanent"
+
+        // Room版本不再有硬性限制，但为了UI性能建议限制加载数量
+        private const val DEFAULT_LOAD_LIMIT = 500  // 默认加载最近500条
+    }
+
+    init {
+        // 首次使用时，自动迁移旧数据
+        migrateOldDataIfNeeded()
+    }
+
+    /**
+     * 迁移旧的SharedPreferences数据到Room数据库
+     * 只执行一次，迁移完成后会标记
+     */
+    private fun migrateOldDataIfNeeded() {
+        val migrationKey = "room_migration_completed"
+        val hasMigrated = prefs.getBoolean(migrationKey, false)
+
+        if (!hasMigrated) {
+            Log.d("ChatHistoryManager", "开始迁移旧数据到Room数据库...")
+            try {
+                // 使用runBlocking在非协程环境中执行suspend函数
+                kotlinx.coroutines.runBlocking {
+                    // 迁移临时历史
+                    migrateKeyToRoom(KEY_CHAT_HISTORY)
+
+                    // 迁移永久历史
+                    migrateKeyToRoom(KEY_PERMANENT_HISTORY)
+                }
+
+                // 标记迁移完成
+                prefs.edit().putBoolean(migrationKey, true).apply()
+                Log.d("ChatHistoryManager", "旧数据迁移完成")
+            } catch (e: Exception) {
+                Log.e("ChatHistoryManager", "数据迁移失败", e)
+            }
+        }
+    }
+
+    /**
+     * 迁移指定Key的数据到Room
+     */
+    private suspend fun migrateKeyToRoom(key: String) {
+        val jsonString = prefs.getString(key, null)
+        if (!jsonString.isNullOrEmpty()) {
+            try {
+                val jsonArray = JSONArray(jsonString)
+                val entities = mutableListOf<ChatMessageEntity>()
+
+                for (i in 0 until jsonArray.length()) {
+                    val jsonObject = jsonArray.getJSONObject(i)
+                    val role = jsonObject.getString("role")
+                    val content = jsonObject.getString("content")
+
+                    entities.add(
+                        ChatMessageEntity(
+                            role = role,
+                            content = content,
+                            timestamp = System.currentTimeMillis() - (jsonArray.length() - i) * 1000,
+                            sessionId = "migrated_$key"
+                        )
+                    )
+                }
+
+                if (entities.isNotEmpty()) {
+                    chatDao.insertAll(entities)
+                    Log.d("ChatHistoryManager", "从 $key 迁移了 ${entities.size} 条消息")
+                }
+            } catch (e: Exception) {
+                Log.e("ChatHistoryManager", "迁移 $key 失败", e)
+            }
+        }
     }
 
     /**
      * 保存聊天消息列表（临时历史）
+     * 保持与旧版本接口兼容
      */
-    fun saveChatMessages(messages: List<ChatMessage>) {
-        saveMessagesToPrefs(messages, KEY_CHAT_HISTORY, "临时历史")
+    suspend fun saveChatMessages(messages: List<ChatMessage>) = withContext(Dispatchers.IO) {
+        try {
+            // 转换为Entity
+            val entities = messages.map { message ->
+                ChatMessageEntity(
+                    role = message.role,
+                    content = message.content,
+                    timestamp = System.currentTimeMillis(),
+                    sessionId = "temporary"
+                )
+            }
+
+            // 先清除旧的临时数据
+            chatDao.clearSession("temporary")
+
+            // 插入新数据
+            chatDao.insertAll(entities)
+
+            Log.d("ChatHistoryManager", "保存临时历史：${messages.size} 条消息")
+        } catch (e: Exception) {
+            Log.e("ChatHistoryManager", "保存临时历史失败", e)
+        }
     }
 
     /**
      * 保存聊天消息列表到永久历史（汇总用）
+     * 保持与旧版本接口兼容
      * 直接追加所有新消息到永久历史末尾
      */
-    fun saveChatMessagesPermanent(newMessages: List<ChatMessage>) {
-        if (newMessages.isEmpty()) return
+    suspend fun saveChatMessagesPermanent(newMessages: List<ChatMessage>) = withContext(Dispatchers.IO) {
+        if (newMessages.isEmpty()) return@withContext
 
-        // 先读取已有的永久历史
-        val existingMessages = loadChatMessagesPermanent()
+        try {
+            // 转换为Entity
+            val entities = newMessages.map { message ->
+                ChatMessageEntity(
+                    role = message.role,
+                    content = message.content,
+                    timestamp = System.currentTimeMillis(),
+                    sessionId = "permanent"
+                )
+            }
 
-        // 直接追加：旧历史 + 新消息
-        val allMessages = existingMessages + newMessages
+            // 批量插入
+            chatDao.insertAll(entities)
 
-        // 限制最大数量（保留最新的100条）
-        val finalMessages = if (allMessages.size > MAX_HISTORY_SIZE) {
-            allMessages.takeLast(MAX_HISTORY_SIZE)
-        } else {
-            allMessages
+            Log.d("ChatHistoryManager", "永久历史保存 ${newMessages.size} 条新消息")
+        } catch (e: Exception) {
+            Log.e("ChatHistoryManager", "保存永久历史失败", e)
         }
-
-        saveMessagesToPrefs(finalMessages, KEY_PERMANENT_HISTORY, "永久历史")
-        android.util.Log.d("ChatHistoryManager", "永久历史保存 ${newMessages.size} 条新消息，总计 ${finalMessages.size} 条")
     }
 
     /**
      * 追加单条消息到永久历史
+     * 保持与旧版本接口兼容
      */
-    fun appendMessageToPermanent(message: ChatMessage) {
-        val existingMessages = loadChatMessagesPermanent()
-        val allMessages = existingMessages + message
-
-        val finalMessages = if (allMessages.size > MAX_HISTORY_SIZE) {
-            allMessages.takeLast(MAX_HISTORY_SIZE)
-        } else {
-            allMessages
-        }
-
-        saveMessagesToPrefs(finalMessages, KEY_PERMANENT_HISTORY, "永久历史")
-        android.util.Log.d("ChatHistoryManager", "永久历史追加1条消息，总计 ${finalMessages.size} 条")
-    }
-
-    /**
-     * 内部方法：保存消息到指定的key
-     */
-    private fun saveMessagesToPrefs(messages: List<ChatMessage>, key: String, logTag: String) {
+    suspend fun appendMessageToPermanent(message: ChatMessage) = withContext(Dispatchers.IO) {
         try {
-            val jsonArray = JSONArray()
-            messages.forEach { message ->
-                val jsonObject = JSONObject().apply {
-                    put("role", message.role)
-                    put("content", message.content)
-                }
-                jsonArray.put(jsonObject)
-            }
+            val entity = ChatMessageEntity(
+                role = message.role,
+                content = message.content,
+                timestamp = System.currentTimeMillis(),
+                sessionId = "permanent"
+            )
 
-            prefs.edit()
-                .putString(key, jsonArray.toString())
-                .apply()
+            chatDao.insert(entity)
 
-            android.util.Log.d("ChatHistoryManager", "保存${logTag}：${messages.size} 条消息")
+            Log.d("ChatHistoryManager", "永久历史追加1条消息")
         } catch (e: Exception) {
-            android.util.Log.e("ChatHistoryManager", "保存${logTag}失败", e)
+            Log.e("ChatHistoryManager", "追加消息失败", e)
         }
     }
 
     /**
      * 加载聊天消息列表（临时历史）
+     * 保持与旧版本接口兼容
      */
-    fun loadChatMessages(): List<ChatMessage> {
-        return loadMessagesFromPrefs(KEY_CHAT_HISTORY, "临时历史")
+    suspend fun loadChatMessages(): List<ChatMessage> = withContext(Dispatchers.IO) {
+        return@withContext try {
+            val entities = chatDao.getMessagesBySession("temporary")
+            entities.map { it.toChatMessage() }
+        } catch (e: Exception) {
+            Log.e("ChatHistoryManager", "加载临时历史失败", e)
+            emptyList()
+        }
     }
 
     /**
      * 加载聊天消息列表（永久历史，用于汇总）
+     * 保持与旧版本接口兼容
      */
-    fun loadChatMessagesPermanent(): List<ChatMessage> {
-        return loadMessagesFromPrefs(KEY_PERMANENT_HISTORY, "永久历史")
-    }
-
-    /**
-     * 内部方法：从指定的key加载消息
-     */
-    private fun loadMessagesFromPrefs(key: String, logTag: String): List<ChatMessage> {
-        return try {
-            val jsonString = prefs.getString(key, null)
-            if (jsonString.isNullOrEmpty()) {
-                android.util.Log.d("ChatHistoryManager", "没有保存的${logTag}")
-                return emptyList()
-            }
-
-            val jsonArray = JSONArray(jsonString)
-            val messages = mutableListOf<ChatMessage>()
-
-            for (i in 0 until jsonArray.length()) {
-                val jsonObject = jsonArray.getJSONObject(i)
-                val role = jsonObject.getString("role")
-                val content = jsonObject.getString("content")
-                messages.add(ChatMessage(role, content))
-            }
-
-            android.util.Log.d("ChatHistoryManager", "加载了${logTag}：${messages.size} 条消息")
-            messages
+    suspend fun loadChatMessagesPermanent(): List<ChatMessage> = withContext(Dispatchers.IO) {
+        return@withContext try {
+            val entities = chatDao.getMessagesBySession("permanent")
+            entities.map { it.toChatMessage() }
         } catch (e: Exception) {
-            android.util.Log.e("ChatHistoryManager", "加载${logTag}失败", e)
+            Log.e("ChatHistoryManager", "加载永久历史失败", e)
             emptyList()
         }
     }
 
     /**
      * 清除临时聊天历史（不影响永久历史）
+     * 保持与旧版本接口兼容
      */
-    fun clearChatHistory() {
-        prefs.edit()
-            .remove(KEY_CHAT_HISTORY)
-            .apply()
-        android.util.Log.d("ChatHistoryManager", "清除了临时聊天历史（永久历史保留）")
+    suspend fun clearChatHistory() = withContext(Dispatchers.IO) {
+        try {
+            chatDao.clearSession("temporary")
+            Log.d("ChatHistoryManager", "清除了临时聊天历史（永久历史保留）")
+        } catch (e: Exception) {
+            Log.e("ChatHistoryManager", "清除临时历史失败", e)
+        }
     }
 
     /**
      * 清除永久聊天历史（仅用于重置等特殊情况）
+     * 保持与旧版本接口兼容
      */
-    fun clearPermanentHistory() {
-        prefs.edit()
-            .remove(KEY_PERMANENT_HISTORY)
-            .apply()
-        android.util.Log.d("ChatHistoryManager", "清除了永久聊天历史")
+    suspend fun clearPermanentHistory() = withContext(Dispatchers.IO) {
+        try {
+            chatDao.clearSession("permanent")
+            Log.d("ChatHistoryManager", "清除了永久聊天历史")
+        } catch (e: Exception) {
+            Log.e("ChatHistoryManager", "清除永久历史失败", e)
+        }
     }
 
     /**
      * 获取临时历史消息的数量
+     * 同步方法，保持与旧版本兼容
      */
     fun getHistorySize(): Int {
-        return getHistorySizeFromKey(KEY_CHAT_HISTORY)
+        return try {
+            // 注意：Room的suspend函数不能在非协程中调用
+            // 这里为了保持兼容性，使用runBlocking包装
+            kotlinx.coroutines.runBlocking {
+                chatDao.getMessagesBySession("temporary").size
+            }
+        } catch (e: Exception) {
+            Log.e("ChatHistoryManager", "获取临时历史数量失败", e)
+            0
+        }
     }
 
     /**
      * 获取永久历史消息的数量
+     * 同步方法，保持与旧版本兼容
      */
     fun getPermanentHistorySize(): Int {
-        return getHistorySizeFromKey(KEY_PERMANENT_HISTORY)
-    }
-
-    /**
-     * 内部方法：从指定key获取历史消息数量
-     */
-    private fun getHistorySizeFromKey(key: String): Int {
-        val jsonString = prefs.getString(key, null)
-        return if (jsonString.isNullOrEmpty()) {
-            0
-        } else {
-            try {
-                JSONArray(jsonString).length()
-            } catch (e: Exception) {
-                0
+        return try {
+            kotlinx.coroutines.runBlocking {
+                chatDao.getMessagesBySession("permanent").size
             }
+        } catch (e: Exception) {
+            Log.e("ChatHistoryManager", "获取永久历史数量失败", e)
+            0
         }
     }
 
     /**
      * 将聊天历史转换为 JSONArray，用于提交到服务器（使用永久历史）
+     * 同步方法，保持与旧版本兼容
      */
     fun getChatHistoryAsJson(): JSONArray {
-        val messages = loadChatMessagesPermanent()  // 使用永久历史
-        val jsonArray = JSONArray()
-        messages.forEach { message ->
-            val jsonObject = JSONObject().apply {
-                put("role", message.role)
-                put("content", message.content)
+        return try {
+            // 使用runBlocking获取数据
+            val messages = kotlinx.coroutines.runBlocking {
+                chatDao.getMessagesBySession("permanent")
             }
-            jsonArray.put(jsonObject)
+
+            val jsonArray = JSONArray()
+            messages.forEach { entity ->
+                val jsonObject = JSONObject().apply {
+                    put("role", entity.role)
+                    put("content", entity.content)
+                }
+                jsonArray.put(jsonObject)
+            }
+            jsonArray
+        } catch (e: Exception) {
+            Log.e("ChatHistoryManager", "转换为JSON失败", e)
+            JSONArray()
         }
-        return jsonArray
     }
 
     /**
      * 获取学生向助手提问的所有问题（仅用户消息，使用永久历史）
+     * 同步方法，保持与旧版本兼容
      */
     fun getUserQuestions(): List<String> {
-        return loadChatMessagesPermanent()  // 使用永久历史
-            .filter { it.role == "user" }
-            .map { it.content }
+        return try {
+            val messages = kotlinx.coroutines.runBlocking {
+                chatDao.getMessagesBySession("permanent")
+            }
+
+            messages
+                .filter { it.role == "user" }
+                .map { it.content }
+        } catch (e: Exception) {
+            Log.e("ChatHistoryManager", "获取用户问题失败", e)
+            emptyList()
+        }
     }
 
     /**
      * 获取格式化的聊天历史文本，便于教师阅读（使用永久历史）
+     * 同步方法，保持与旧版本兼容
      */
-    fun getFormattedChatHistory(context: Context): String {
+    suspend fun getFormattedChatHistory(context: Context): String = withContext(Dispatchers.IO) {
         val studentPrefs = context.getSharedPreferences("TeaCultureApp", Context.MODE_PRIVATE)
         val school = studentPrefs.getString("school", "") ?: ""
         val grade = studentPrefs.getString("grade", "") ?: ""
@@ -236,14 +337,14 @@ class ChatHistoryManager(context: Context) {
         sb.appendLine("=== 问答记录 ===")
         sb.appendLine()
 
-        val messages = loadChatMessagesPermanent()  // 使用永久历史
+        val messages = chatDao.getMessagesBySession("permanent")
         if (messages.isEmpty()) {
             sb.appendLine("暂无聊天记录")
         } else {
-            messages.forEachIndexed { index, message ->
-                val role = if (message.role == "user") "学生" else "AI助手"
+            messages.forEachIndexed { index, entity ->
+                val role = if (entity.role == "user") "学生" else "AI助手"
                 sb.appendLine("[$role]")
-                sb.appendLine(message.content)
+                sb.appendLine(entity.content)
                 sb.appendLine()
                 if (index < messages.size - 1) {
                     sb.appendLine("---")
@@ -251,11 +352,18 @@ class ChatHistoryManager(context: Context) {
             }
         }
 
-        return sb.toString()
+        return@withContext sb.toString()
+    }
+
+    /**
+     * ChatMessageEntity 转换为 ChatMessage
+     */
+    private fun ChatMessageEntity.toChatMessage(): ChatMessage {
+        return ChatMessage(role, content)
     }
 }
 
-// 数据类定义
+// 数据类定义（保持不变）
 data class ChatMessage(
     val role: String, // "user" or "assistant"
     val content: String

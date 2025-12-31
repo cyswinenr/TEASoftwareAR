@@ -23,11 +23,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import android.content.Context
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.DisposableEffect
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import Teacourse.apk.utils.MoonshotApiService
@@ -62,7 +64,18 @@ fun ChatScreen(
 
     // 用于区分加载历史和新增消息
     var initialLoadSize by remember { mutableStateOf(0) }
-    var hasLoadedInitial by remember { mutableStateOf(false) }
+    var hasLoadedInitial by remember {
+        val prefs = context.getSharedPreferences("ChatScreen", Context.MODE_PRIVATE)
+        mutableStateOf(prefs.getBoolean("hasLoadedInitial", false))
+    }
+
+    // 保存加载状态
+    LaunchedEffect(hasLoadedInitial) {
+        if (hasLoadedInitial) {
+            val prefs = context.getSharedPreferences("ChatScreen", Context.MODE_PRIVATE)
+            prefs.edit().putBoolean("hasLoadedInitial", true).apply()
+        }
+    }
 
     // API 服务
     val apiService = remember { MoonshotApiService() }
@@ -83,9 +96,14 @@ fun ChatScreen(
                 })
             }
 
-            // 记录初始加载的大小
-            initialLoadSize = chatMessages.size
-            hasLoadedInitial = true
+            // 只在第一次加载时记录初始大小
+            if (!hasLoadedInitial) {
+                initialLoadSize = chatMessages.size
+                hasLoadedInitial = true
+                // 保存到SharedPreferences
+                val prefs = context.getSharedPreferences("ChatScreen", Context.MODE_PRIVATE)
+                prefs.edit().putBoolean("hasLoadedInitial", true).apply()
+            }
 
             // 滚动到最新消息
             if (chatMessages.isNotEmpty()) {
@@ -93,12 +111,16 @@ fun ChatScreen(
             }
         } else {
             hasLoadedInitial = true
+            // 保存到SharedPreferences
+            val prefs = context.getSharedPreferences("ChatScreen", Context.MODE_PRIVATE)
+            prefs.edit().putBoolean("hasLoadedInitial", true).apply()
         }
     }
 
     // 当有新消息时，滚动到底部并保存历史记录
-    LaunchedEffect(chatMessages.size) {
-        if (chatMessages.isNotEmpty() && hasLoadedInitial) {
+    LaunchedEffect(chatMessages.size, isLoading) {
+        if (chatMessages.isNotEmpty() && hasLoadedInitial && !isLoading) {
+            // 只在不加载时保存（确保AI回答完整）
             // 保存到临时历史（显示用）
             historyManager.saveChatMessages(chatMessages.toList())
 
@@ -111,6 +133,26 @@ fun ChatScreen(
             // 滚动到底部
             coroutineScope.launch {
                 listState.animateScrollToItem(chatMessages.size - 1)
+            }
+        } else if (chatMessages.isNotEmpty() && hasLoadedInitial) {
+            // 正在加载时只滚动，不保存
+            coroutineScope.launch {
+                listState.animateScrollToItem(chatMessages.size - 1)
+            }
+        }
+    }
+
+    // 页面离开时保存数据（防止用户在AI回答中途退出）
+    DisposableEffect(Unit) {
+        onDispose {
+            if (chatMessages.isNotEmpty()) {
+                coroutineScope.launch {
+                    try {
+                        historyManager.saveChatMessages(chatMessages.toList())
+                    } catch (e: Exception) {
+                        android.util.Log.e("ChatScreen", "离开页面时保存失败", e)
+                    }
+                }
             }
         }
     }
@@ -446,11 +488,17 @@ fun ChatScreen(
                 confirmButton = {
                     TextButton(
                         onClick = {
-                            chatMessages.clear()
-                            historyMessages.clear()
-                            historyManager.clearChatHistory()
-                            initialLoadSize = 0  // 重置初始加载大小
-                            showClearDialog = false
+                            coroutineScope.launch {
+                                chatMessages.clear()
+                                historyMessages.clear()
+                                historyManager.clearChatHistory()
+                                initialLoadSize = 0  // 重置初始加载大小
+                                hasLoadedInitial = false  // 重置加载状态
+                                // 清除持久化标记
+                                val prefs = context.getSharedPreferences("ChatScreen", Context.MODE_PRIVATE)
+                                prefs.edit().putBoolean("hasLoadedInitial", false).apply()
+                                showClearDialog = false
+                            }
                         }
                     ) {
                         Text("确定", color = Color(0xFF2E7D32))

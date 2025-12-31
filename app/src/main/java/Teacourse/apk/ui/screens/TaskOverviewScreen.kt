@@ -156,15 +156,15 @@ fun TaskOverviewScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                // 标题
+                // 标题（左对齐）
                 Text(
                     text = "任务总览",
                     fontSize = 48.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF2E7D32)
                 )
-                
-                // 按钮组（右上角）
+
+                // 按钮组（右对齐）
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(15.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -624,6 +624,7 @@ fun TaskOverviewScreen(
                 containerColor = Color.White
             )
         }
+
     }
 }
 
@@ -698,6 +699,7 @@ fun TaskCard(task: TaskItem, onClick: () -> Unit) {
                 )
             }
         }
-    }
+
+}
 }
 

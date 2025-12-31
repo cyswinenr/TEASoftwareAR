@@ -29,6 +29,8 @@ import android.content.Context
 import android.widget.Toast
 import java.io.File
 import Teacourse.apk.R
+import Teacourse.apk.utils.AppDatabase
+import android.util.Log
 
 @Composable
 fun SplashScreen(onStartClick: () -> Unit) {
@@ -37,50 +39,82 @@ fun SplashScreen(onStartClick: () -> Unit) {
     
     // 清除所有数据
     fun clearAllData() {
-        val prefsNames = listOf(
-            "TeaCultureApp",
-            "Task1Data",
-            "Task2Data",
-            "Thinking1Data",
-            "Thinking2Data",
-            "CreativeData"
-        )
-        
-        // 清除所有 SharedPreferences 数据
-        prefsNames.forEach { prefsName ->
-            val prefs = context.getSharedPreferences(prefsName, Context.MODE_PRIVATE)
-            // 先获取照片路径，然后清除数据
-            val photoPaths = prefs.getStringSet("photoPaths", setOf()) ?: setOf()
-            
-            // 删除所有照片文件
-            photoPaths.forEach { photoPath ->
-                try {
-                    val file = File(photoPath)
-                    if (file.exists()) {
-                        file.delete()
-                    }
-                } catch (e: Exception) {
-                    // 忽略删除失败的文件
-                }
-            }
-            
-            // 清除 SharedPreferences
-            prefs.edit().clear().apply()
-        }
-        
-        // 删除所有照片目录中的文件（以防有遗漏）
         try {
-            val picturesDir = context.getExternalFilesDir(android.os.Environment.DIRECTORY_PICTURES)
-            picturesDir?.listFiles()?.forEach { file ->
-                if (file.isFile && (file.name.endsWith(".jpg") || file.name.endsWith(".jpeg"))) {
-                    file.delete()
+            val prefsNames = listOf(
+                "TeaCultureApp",
+                "Task1Data",
+                "Task2Data",
+                "Thinking1Data",
+                "Thinking2Data",
+                "CreativeData",
+                "chat_history",
+                "ChatScreen",
+                "AppSettings"
+            )
+
+            var deletedPhotoCount = 0
+
+            // 清除所有 SharedPreferences 数据
+            prefsNames.forEach { prefsName ->
+                val prefs = context.getSharedPreferences(prefsName, Context.MODE_PRIVATE)
+                // 先获取照片路径，然后清除数据
+                val photoPaths = prefs.getStringSet("photoPaths", setOf()) ?: setOf()
+
+                // 删除所有照片文件
+                photoPaths.forEach { photoPath ->
+                    try {
+                        val file = File(photoPath)
+                        if (file.exists() && file.delete()) {
+                            deletedPhotoCount++
+                            Log.d("SplashScreen", "删除照片: $photoPath")
+                        }
+                    } catch (e: Exception) {
+                        Log.e("SplashScreen", "删除照片失败: $photoPath", e)
+                    }
                 }
+
+                // 清除 SharedPreferences
+                prefs.edit().clear().apply()
             }
+
+            // 删除所有照片目录中的文件（以防有遗漏）
+            try {
+                val picturesDir = context.getExternalFilesDir(android.os.Environment.DIRECTORY_PICTURES)
+                picturesDir?.listFiles()?.forEach { file ->
+                    if (file.isFile && (file.name.endsWith(".jpg") || file.name.endsWith(".jpeg"))) {
+                        if (file.delete()) {
+                            deletedPhotoCount++
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("SplashScreen", "删除照片目录文件失败", e)
+            }
+
+            // 清除Room数据库
+            try {
+                val database = AppDatabase.getInstance(context)
+                kotlinx.coroutines.runBlocking {
+                    database.chatMessageDao().clearAll()
+                }
+                Log.d("SplashScreen", "Room数据库已清除")
+            } catch (e: Exception) {
+                Log.e("SplashScreen", "清除Room数据库失败", e)
+            }
+
+            // 显示成功提示
+            val message = if (deletedPhotoCount > 0) {
+                "✓ 所有数据已清除\n已删除 $deletedPhotoCount 张照片"
+            } else {
+                "✓ 所有数据已清除"
+            }
+            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+
         } catch (e: Exception) {
-            // 忽略删除失败的文件
+            Log.e("SplashScreen", "清除数据失败", e)
+            Toast.makeText(context, "清除失败：${e.message}", Toast.LENGTH_LONG).show()
         }
-        
-        Toast.makeText(context, "所有数据已清除", Toast.LENGTH_SHORT).show()
+
         showClearDataDialog = false
     }
     
@@ -254,28 +288,44 @@ fun SplashScreen(onStartClick: () -> Unit) {
                 onDismissRequest = { showClearDataDialog = false },
                 title = {
                     Text(
-                        text = "清除所有数据",
-                        fontSize = 20.sp,
+                        text = "⚠️ 清除所有数据",
+                        fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF2E7D32)
+                        color = Color(0xFFD32F2F)
                     )
                 },
                 text = {
-                    Text(
-                        text = "确定要清除所有已填写的数据吗？此操作不可恢复。",
-                        fontSize = 16.sp,
-                        color = Color(0xFF424242)
-                    )
+                    Column {
+                        Text(
+                            text = "确定要清除所有数据吗？此操作不可恢复！",
+                            fontSize = 17.sp,
+                            color = Color(0xFF424242),
+                            modifier = Modifier.padding(bottom = 12.dp)
+                        )
+                        Text(
+                            text = "将清除：",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF757575),
+                            modifier = Modifier.padding(bottom = 6.dp)
+                        )
+                        Text(
+                            text = "• 学生信息\n• 任务数据（任务一、任务二）\n• 思考题数据\n• 创意题数据\n• 所有照片\n• 智能体对话记录\n• 服务器地址设置",
+                            fontSize = 14.sp,
+                            color = Color(0xFF757575),
+                            lineHeight = 20.sp
+                        )
+                    }
                 },
                 confirmButton = {
                     Button(
                         onClick = { clearAllData() },
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFFF5252)
+                            containerColor = Color(0xFFD32F2F)
                         ),
                         shape = RoundedCornerShape(8.dp)
                     ) {
-                        Text("确定清除", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text("确定清除", fontSize = 16.sp)
                     }
                 },
                 dismissButton = {
