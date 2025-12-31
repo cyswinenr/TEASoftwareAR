@@ -1,13 +1,17 @@
 """
 Web路由 - 教师查看界面
 """
-from flask import Blueprint, render_template, request, jsonify, send_from_directory, redirect, url_for
+from flask import Blueprint, render_template, request, jsonify, send_from_directory, redirect, url_for, send_file
 from app import db
 from app.models import StudentGroup, GroupMember, Task1Data, Task2Data, ThinkingQuestion, Photo, ChatMessage
 from app.services.data_service import delete_student_data
+from app.services.export_service import DataExportService
+from app.services.pdf_service import PDFExportService
 from pathlib import Path
 from sqlalchemy import case
+from datetime import datetime
 import sys
+import tempfile
 # 添加项目根目录到路径
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from config import Config
@@ -233,4 +237,203 @@ def delete_student(submission_id):
 def serve_photo(filename):
     """提供照片文件"""
     return send_from_directory(Config.UPLOAD_FOLDER, filename)
+
+@web_bp.route('/export/excel')
+def export_excel():
+    """导出Excel文件"""
+    try:
+        # 获取筛选条件
+        school = request.args.get('school', '')
+        grade = request.args.get('grade', '')
+        class_number = request.args.get('class_number', '')
+        
+        # 查询数据
+        from sqlalchemy.orm import joinedload
+        query = StudentGroup.query.options(
+            joinedload(StudentGroup.members),
+            joinedload(StudentGroup.task1),
+            joinedload(StudentGroup.task2),
+            joinedload(StudentGroup.thinking_questions),
+            joinedload(StudentGroup.chat_messages)
+        )
+        
+        if school:
+            query = query.filter(StudentGroup.school.contains(school))
+        if grade:
+            query = query.filter(StudentGroup.grade == grade)
+        if class_number:
+            query = query.filter(StudentGroup.class_number == class_number)
+        
+        groups = query.order_by(
+            case((StudentGroup.group_number.is_(None), 999999), else_=StudentGroup.group_number).asc(),
+            StudentGroup.submit_time.desc()
+        ).all()
+        
+        if not groups:
+            return jsonify({
+                'success': False,
+                'message': '没有数据可导出'
+            }), 400
+        
+        # 导出Excel
+        export_service = DataExportService()
+        
+        # 使用临时文件
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tmp:
+            output_path = tmp.name
+        
+        export_service.export_to_excel(groups, output_path)
+        
+        # 生成下载文件名
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        
+        # 根据筛选条件生成文件名
+        filename_parts = ['茶文化课程数据']
+        if school:
+            filename_parts.append(school)
+        if grade:
+            filename_parts.append(grade)
+        if class_number:
+            filename_parts.append(f'{class_number}班')
+        filename_parts.append(timestamp)
+        
+        download_name = '_'.join(filename_parts) + '.xlsx'
+        
+        return send_file(
+            output_path,
+            as_attachment=True,
+            download_name=download_name,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'message': f'导出失败: {str(e)}'
+        }), 500
+
+@web_bp.route('/export/json')
+def export_json():
+    """导出JSON文件（适合AI分析）"""
+    try:
+        # 获取筛选条件
+        school = request.args.get('school', '')
+        grade = request.args.get('grade', '')
+        class_number = request.args.get('class_number', '')
+        
+        # 查询数据
+        from sqlalchemy.orm import joinedload
+        query = StudentGroup.query.options(
+            joinedload(StudentGroup.members),
+            joinedload(StudentGroup.task1),
+            joinedload(StudentGroup.task2),
+            joinedload(StudentGroup.thinking_questions),
+            joinedload(StudentGroup.chat_messages)
+        )
+        
+        if school:
+            query = query.filter(StudentGroup.school.contains(school))
+        if grade:
+            query = query.filter(StudentGroup.grade == grade)
+        if class_number:
+            query = query.filter(StudentGroup.class_number == class_number)
+        
+        groups = query.order_by(
+            case((StudentGroup.group_number.is_(None), 999999), else_=StudentGroup.group_number).asc(),
+            StudentGroup.submit_time.desc()
+        ).all()
+        
+        if not groups:
+            return jsonify({
+                'success': False,
+                'message': '没有数据可导出'
+            }), 400
+        
+        # 导出JSON
+        export_service = DataExportService()
+        
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.json', mode='w', encoding='utf-8') as tmp:
+            output_path = tmp.name
+        
+        export_service.export_to_json(groups, output_path)
+        
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        
+        # 根据筛选条件生成文件名
+        filename_parts = ['茶文化课程数据']
+        if school:
+            filename_parts.append(school)
+        if grade:
+            filename_parts.append(grade)
+        if class_number:
+            filename_parts.append(f'{class_number}班')
+        filename_parts.append(timestamp)
+        
+        download_name = '_'.join(filename_parts) + '.json'
+        
+        return send_file(
+            output_path,
+            as_attachment=True,
+            download_name=download_name,
+            mimetype='application/json'
+        )
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'message': f'导出失败: {str(e)}'
+        }), 500
+
+@web_bp.route('/export/pdf/<submission_id>')
+def export_pdf(submission_id):
+    """导出单个小组的PDF报告"""
+    try:
+        # 查询学生组数据
+        from sqlalchemy.orm import joinedload
+        group = StudentGroup.query.options(
+            joinedload(StudentGroup.members),
+            joinedload(StudentGroup.task1),
+            joinedload(StudentGroup.task2),
+            joinedload(StudentGroup.thinking_questions),
+            joinedload(StudentGroup.chat_messages),
+            joinedload(StudentGroup.photos)
+        ).filter_by(submission_id=submission_id).first()
+        
+        if not group:
+            return jsonify({
+                'success': False,
+                'message': '学生数据不存在'
+            }), 404
+        
+        # 生成PDF
+        pdf_service = PDFExportService()
+        
+        # 使用临时文件
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp:
+            output_path = tmp.name
+        
+        pdf_service.generate_group_pdf(group, output_path)
+        
+        # 生成下载文件名
+        group_num = f"小组{group.group_number}" if group.group_number else "未设置编号"
+        download_name = f"茶文化课程报告_{group.school}_{group.grade}{group.class_number}班_{group_num}.pdf"
+        
+        return send_file(
+            output_path,
+            as_attachment=True,
+            download_name=download_name,
+            mimetype='application/pdf'
+        )
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'message': f'PDF生成失败: {str(e)}'
+        }), 500
 

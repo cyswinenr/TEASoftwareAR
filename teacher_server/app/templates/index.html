@@ -37,6 +37,30 @@
             </div>
         </div>
     </form>
+    
+    <!-- 数据导出按钮 -->
+    <div style="margin-top: 20px; padding: 15px; background-color: #F5F5F5; border-radius: 8px; display: flex; align-items: center; justify-content: space-between;">
+        <div style="flex: 1;">
+            <h3 style="margin: 0 0 5px 0; color: #2E7D32; font-size: 16px;">📊 数据导出</h3>
+            <p style="margin: 0; color: #666; font-size: 14px;">
+                导出当前筛选条件下的所有数据（共 {{ pagination.total }} 条记录）
+            </p>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <a href="/export/excel?school={{ school }}&grade={{ grade }}&class_number={{ class_number }}&start_date={{ start_date }}&end_date={{ end_date }}" 
+               class="btn" 
+               style="background-color: #4CAF50; padding: 10px 20px; font-size: 15px; display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 20px;">📊</span>
+                <span>导出Excel（推荐）</span>
+            </a>
+            <a href="/export/json?school={{ school }}&grade={{ grade }}&class_number={{ class_number }}&start_date={{ start_date }}&end_date={{ end_date }}" 
+               class="btn" 
+               style="background-color: #9C27B0; padding: 10px 20px; font-size: 15px; display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 20px;">📄</span>
+                <span>导出JSON（AI分析）</span>
+            </a>
+        </div>
+    </div>
 </div>
 
 <div class="card">
@@ -135,8 +159,17 @@
                 </td>
                 <td>{{ student.submit_time.strftime('%Y-%m-%d %H:%M') if student.submit_time else '' }}</td>
                 <td>
-                    <div style="display: flex; gap: 8px;">
-                        <a href="/student/{{ student.submission_id }}" class="btn btn-secondary" style="padding: 6px 12px; font-size: 14px;">查看详情</a>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <a href="/student/{{ student.submission_id }}" 
+                           class="btn btn-secondary" 
+                           style="padding: 6px 12px; font-size: 14px;">
+                            查看详情
+                        </a>
+                        <a href="/export/pdf/{{ student.submission_id }}" 
+                           class="btn" 
+                           style="padding: 6px 12px; font-size: 14px; background-color: #FF5722; color: white;">
+                            📄 导出PDF
+                        </a>
                         <button onclick="deleteStudent('{{ student.submission_id }}', '{{ student.school }} - {{ student.grade }}{{ student.class_number }}班')" 
                                 class="btn" 
                                 style="padding: 6px 12px; font-size: 14px; background-color: #F44336; color: white;">

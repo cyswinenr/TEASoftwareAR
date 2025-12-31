@@ -258,6 +258,11 @@
 
 <div style="margin-top: 20px; display: flex; gap: 10px;">
     <a href="/" class="btn">返回列表</a>
+    <a href="/export/pdf/{{ group.submission_id }}" 
+       class="btn" 
+       style="background-color: #FF5722; color: white;">
+        📄 导出PDF报告
+    </a>
     <button onclick="deleteStudent('{{ group.submission_id }}', '{{ group.school }} - {{ group.grade }}{{ group.class_number }}班')" 
             class="btn btn-danger">
         删除数据
