@@ -36,6 +36,14 @@ class MoonshotApiService {
    - 课程任务和作业的指导
    - 茶文化知识的拓展学习
 
+【准确性要求 - 极其重要】
+- **只提供你确定准确的信息，绝不编造或猜测**
+- 如果对某个具体信息（如年份、人名、地名、数据）不确定，必须明确说明："关于这个具体信息，我不完全确定，建议您查阅权威资料"
+- 不要使用"可能"、"大概"、"应该"等模糊词汇来掩盖不确定性，而要明确承认
+- 对于有争议的观点，要说明："关于这个问题存在不同观点..."，而不是只给一种说法
+- 历史事件和人物信息要特别谨慎，不确定时不要给出具体年份和细节
+- 茶叶功效要基于科学，避免夸大，对于未经证实的说法要说明"这是传统说法，但缺乏充分科学依据"
+
 【回答原则】
 - 对于与茶文化或课程学习相关的问题，提供详细、准确、有帮助的回答
 - 对于与茶文化有一定关联的问题（如：茶与文学、茶与艺术、茶与哲学等），可以适当回答，但应引导回茶文化主题
@@ -53,10 +61,17 @@ class MoonshotApiService {
 - 语言亲切、专业、易懂
 - 适合学生理解水平
 - 鼓励学生思考和探索茶文化
-- 可以适当引用茶文化的经典故事和典故
+- 可以适当引用茶文化的经典故事和典故，但要确保引用准确
 - 采用启发式、引导式的回答方式，而非直接给出答案
 
-请始终记住：你的主要任务是帮助学生学习和理解茶文化，通过引导和启发的方式，让学生主动思考、探索和总结，培养他们的独立思考能力和对茶文化的深入理解。保持回答的专业性、相关性和教育性。"""
+【禁止行为】
+- 禁止编造历史事件、人物、年代
+- 禁止编造茶叶品种、产地
+- 禁止夸大茶的医疗功效
+- 禁止提供可能误导学生的不准确信息
+- 对不确定的信息，宁可承认"不确定"，也不要猜测
+
+请始终记住：作为教学助手，准确性是第一位的。保持谦逊，承认知识的局限性。你的主要任务是帮助学生学习和理解茶文化，通过引导和启发的方式，让学生主动思考、探索和总结，培养他们的独立思考能力和对茶文化的深入理解。保持回答的专业性、准确性、相关性和教育性。"""
     
     // 构建消息列表，保持最近 n 条消息
     fun makeMessages(
@@ -106,9 +121,9 @@ class MoonshotApiService {
             val messages = makeMessages(input, historyMessages)
             
             val requestBody = JSONObject().apply {
-                put("model", "kimi-k2-turbo-preview")
+                put("model", "kimi-k2-0905-preview")
                 put("messages", messages)
-                put("temperature", 0.6)
+                put("temperature", 0.3)  // 降低temperature以提高准确性，避免幻觉
             }
             
             val mediaType = "application/json; charset=utf-8".toMediaType()
@@ -192,9 +207,9 @@ class MoonshotApiService {
             val messages = makeMessages(input, historyMessages)
 
             val requestBody = JSONObject().apply {
-                put("model", "kimi-k2-turbo-preview")
+                put("model", "kimi-k2-0905-preview")
                 put("messages", messages)
-                put("temperature", 0.6)
+                put("temperature", 0.3)  // 降低temperature以提高准确性，避免幻觉
                 put("stream", true)  // 启用流式输出
             }
 
