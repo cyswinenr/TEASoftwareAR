@@ -15,6 +15,9 @@ class MoonshotApiService {
         .writeTimeout(60, TimeUnit.SECONDS)
         .build()
     
+    // 保存当前的 API 调用，用于取消
+    private var currentCall: Call? = null
+    
     private val apiKey = "sk-6xU8gCOhcSDzxmuFhOVwB4W3sej7YTmQIlghaaNnDUJZETsK"
     private val baseUrl = "https://api.moonshot.cn/v1"
     
@@ -225,7 +228,9 @@ class MoonshotApiService {
 
             android.util.Log.d("MoonshotApiService", "发送流式请求到: $baseUrl/chat/completions")
 
-            client.newCall(request).enqueue(object : Callback {
+            // 保存当前调用，以便可以取消
+            currentCall = client.newCall(request)
+            currentCall?.enqueue(object : Callback {
                 override fun onFailure(call: Call, e: IOException) {
                     android.util.Log.e("MoonshotApiService", "流式请求失败", e)
                     android.os.Handler(android.os.Looper.getMainLooper()).post {
@@ -319,6 +324,7 @@ class MoonshotApiService {
                         }
                     } finally {
                         response.close()
+                        currentCall = null
                     }
                 }
             })
@@ -326,6 +332,13 @@ class MoonshotApiService {
             android.util.Log.e("MoonshotApiService", "发送流式请求异常", e)
             onError("发送请求失败: ${e.message ?: "未知错误"}")
         }
+    }
+    
+    // 取消当前的 API 请求
+    fun cancelCurrentRequest() {
+        currentCall?.cancel()
+        currentCall = null
+        android.util.Log.d("MoonshotApiService", "已取消当前 API 请求")
     }
 }
 

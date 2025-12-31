@@ -61,6 +61,9 @@ fun ChatScreen(
 
     // 显示清除历史确认对话框
     var showClearDialog by remember { mutableStateOf(false) }
+    
+    // 显示退出确认对话框
+    var showExitDialog by remember { mutableStateOf(false) }
 
     // 用于区分加载历史和新增消息
     var initialLoadSize by remember { mutableStateOf(0) }
@@ -183,7 +186,14 @@ fun ChatScreen(
             ) {
                 // 返回按钮
                 IconButton(
-                    onClick = onBackClick,
+                    onClick = {
+                        // 如果正在加载，弹出确认对话框
+                        if (isLoading) {
+                            showExitDialog = true
+                        } else {
+                            onBackClick()
+                        }
+                    },
                     modifier = Modifier.size(48.dp)
                 ) {
                     Icon(
@@ -509,6 +519,75 @@ fun ChatScreen(
                         onClick = { showClearDialog = false }
                     ) {
                         Text("取消", color = Color(0xFF757575))
+                    }
+                }
+            )
+        }
+        
+        // 退出确认对话框（当AI正在生成内容时）
+        if (showExitDialog) {
+            AlertDialog(
+                onDismissRequest = { showExitDialog = false },
+                title = {
+                    Text(
+                        text = "AI正在生成回答",
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFFF6B6B)
+                    )
+                },
+                text = {
+                    Column {
+                        Text(
+                            text = "智能体正在生成回答，现在退出会中断回答过程。",
+                            fontSize = 16.sp,
+                            color = Color(0xFF424242),
+                            modifier = Modifier.padding(bottom = 12.dp)
+                        )
+                        Text(
+                            text = "您可以：",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF424242),
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                        Text(
+                            text = "• 继续生成：等待AI完成回答",
+                            fontSize = 14.sp,
+                            color = Color(0xFF2E7D32),
+                            modifier = Modifier.padding(bottom = 4.dp)
+                        )
+                        Text(
+                            text = "• 终止并退出：立即停止生成并返回",
+                            fontSize = 14.sp,
+                            color = Color(0xFFFF6B6B)
+                        )
+                    }
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            // 终止API请求
+                            apiService.cancelCurrentRequest()
+                            isLoading = false
+                            showExitDialog = false
+                            // 退出页面
+                            onBackClick()
+                        },
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = Color(0xFFFF6B6B)
+                        )
+                    ) {
+                        Text("终止并退出", fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = { showExitDialog = false },
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = Color(0xFF2E7D32)
+                        )
+                    ) {
+                        Text("继续生成")
                     }
                 }
             )
