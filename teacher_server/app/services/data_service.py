@@ -5,7 +5,7 @@ from datetime import datetime
 from app import db
 from app.models import (
     StudentGroup, GroupMember, Task1Data, Task2Data, 
-    ThinkingQuestion, Photo
+    ThinkingQuestion, Photo, ChatMessage
 )
 from app.utils.validators import *
 from app.services.photo_service import save_photo_from_base64
@@ -402,6 +402,39 @@ def save_thinking_question(group_id, question_type, answer, photos, submission_i
         traceback.print_exc()
         return None
 
+def save_chat_messages(group_id, chat_history, update_existing=False):
+    """保存茶助教问答记录"""
+    try:
+        # 如果更新现有记录，先删除旧记录
+        if update_existing:
+            ChatMessage.query.filter_by(group_id=group_id).delete()
+        
+        # 保存聊天记录
+        if chat_history and isinstance(chat_history, list):
+            for index, message in enumerate(chat_history):
+                if isinstance(message, dict):
+                    role = message.get('role', '')
+                    content = message.get('content', '')
+                    
+                    if role in ['user', 'assistant'] and content:
+                        chat_message = ChatMessage(
+                            group_id=group_id,
+                            message_index=index,
+                            role=role,
+                            content=content
+                        )
+                        db.session.add(chat_message)
+            
+            print(f"保存了 {len(chat_history)} 条茶助教问答记录")
+        
+        return True
+        
+    except Exception as e:
+        print(f"保存茶助教问答记录失败: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
 def save_all_data(data, submission_id=None):
     """
     保存所有提交的数据，支持更新现有记录
@@ -472,6 +505,11 @@ def save_all_data(data, submission_id=None):
                 result_submission_id,
                 update_existing=is_update
             )
+        
+        # 保存茶助教问答记录
+        if data.get('chatHistory'):
+            chat_history = data.get('chatHistory', [])
+            save_chat_messages(group.id, chat_history, update_existing=is_update)
         
         # 提交事务
         db.session.commit()

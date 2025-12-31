@@ -28,6 +28,7 @@ class StudentGroup(db.Model):
     task2 = db.relationship('Task2Data', backref='group', uselist=False, cascade='all, delete-orphan')
     thinking_questions = db.relationship('ThinkingQuestion', backref='group', lazy=True, cascade='all, delete-orphan')
     photos = db.relationship('Photo', backref='group', lazy=True, cascade='all, delete-orphan')
+    chat_messages = db.relationship('ChatMessage', backref='group', lazy=True, cascade='all, delete-orphan')
     
     def to_dict(self):
         """转换为字典"""
@@ -257,5 +258,29 @@ class Photo(db.Model):
             'file_name': self.file_name,
             'file_size': self.file_size,
             'upload_time': self.upload_time.isoformat() if self.upload_time else None
+        }
+
+
+class ChatMessage(db.Model):
+    """茶助教问答记录表"""
+    __tablename__ = 'chat_messages'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    group_id = db.Column(db.Integer, db.ForeignKey('student_groups.id', ondelete='CASCADE'), nullable=False, index=True)
+    message_index = db.Column(db.Integer, nullable=False)  # 消息序号（对话顺序）
+    role = db.Column(db.String(20), nullable=False)  # user 或 assistant
+    content = db.Column(db.Text, nullable=False)  # 消息内容
+    submit_time = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    __table_args__ = (db.UniqueConstraint('group_id', 'message_index', name='uq_group_message'),)
+    
+    def to_dict(self):
+        """转换为字典"""
+        return {
+            'id': self.id,
+            'message_index': self.message_index,
+            'role': self.role,
+            'content': self.content,
+            'submit_time': self.submit_time.isoformat() if self.submit_time else None
         }
 

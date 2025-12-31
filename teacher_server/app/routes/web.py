@@ -3,7 +3,7 @@ Web路由 - 教师查看界面
 """
 from flask import Blueprint, render_template, request, jsonify, send_from_directory, redirect, url_for
 from app import db
-from app.models import StudentGroup, GroupMember, Task1Data, Task2Data, ThinkingQuestion, Photo
+from app.models import StudentGroup, GroupMember, Task1Data, Task2Data, ThinkingQuestion, Photo, ChatMessage
 from app.services.data_service import delete_student_data
 from pathlib import Path
 from sqlalchemy import case
@@ -192,6 +192,14 @@ def api_student_detail(submission_id):
             {'url': f'/static/photos/{Path(p.file_path).name}'}
             for p in group.photos if p.photo_type == thinking.question_type
         ]
+    
+    # 添加茶助教问答记录
+    chat_messages = ChatMessage.query.filter_by(group_id=group.id).order_by(ChatMessage.message_index).all()
+    data['chat_messages'] = [msg.to_dict() for msg in chat_messages]
+    
+    # 统计学生提问数量
+    user_questions = [msg for msg in chat_messages if msg.role == 'user']
+    data['user_questions_count'] = len(user_questions)
     
     return jsonify({
         'success': True,

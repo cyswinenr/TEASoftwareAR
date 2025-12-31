@@ -187,6 +187,75 @@
 </div>
 {% endfor %}
 
+{% set chat_messages = group.chat_messages | sort(attribute='message_index') %}
+{% if chat_messages %}
+<div class="card">
+    <h2>茶助教问答记录</h2>
+    
+    <div style="margin-top: 15px; padding: 15px; background-color: #F3E5F5; border-radius: 8px;">
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; text-align: center;">
+            <div>
+                <div style="font-size: 28px; font-weight: bold; color: #9C27B0;">{{ chat_messages | length }}</div>
+                <div style="color: #666; margin-top: 5px;">对话总数</div>
+            </div>
+            <div>
+                <div style="font-size: 28px; font-weight: bold; color: #2196F3;">
+                    {{ chat_messages | selectattr('role', 'equalto', 'user') | list | length }}
+                </div>
+                <div style="color: #666; margin-top: 5px;">学生提问</div>
+            </div>
+            <div>
+                <div style="font-size: 28px; font-weight: bold; color: #4CAF50;">
+                    {{ chat_messages | selectattr('role', 'equalto', 'assistant') | list | length }}
+                </div>
+                <div style="color: #666; margin-top: 5px;">AI回答</div>
+            </div>
+        </div>
+    </div>
+    
+    <h3 style="margin-top: 25px;">学生提问列表</h3>
+    <div style="margin-top: 10px;">
+        {% set user_messages = chat_messages | selectattr('role', 'equalto', 'user') | list %}
+        {% if user_messages %}
+            <ol style="padding-left: 25px;">
+                {% for msg in user_messages %}
+                <li style="margin-bottom: 12px; padding: 10px; background-color: #F5F5DC; border-radius: 6px;">
+                    <div style="color: #333; line-height: 1.6;">{{ msg.content }}</div>
+                </li>
+                {% endfor %}
+            </ol>
+        {% else %}
+            <div style="color: #999; padding: 15px; text-align: center;">暂无学生提问</div>
+        {% endif %}
+    </div>
+    
+    <h3 style="margin-top: 25px;">完整对话记录</h3>
+    <div style="margin-top: 15px;">
+        {% for msg in chat_messages %}
+        <div style="margin-bottom: 15px;">
+            {% if msg.role == 'user' %}
+            <!-- 学生提问 -->
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
+                <div style="max-width: 70%; background-color: #E8F5E9; padding: 12px 16px; border-radius: 12px; border-bottom-right-radius: 4px;">
+                    <div style="font-weight: bold; color: #2E7D32; margin-bottom: 5px; font-size: 13px;">👤 学生</div>
+                    <div style="color: #333; line-height: 1.6; white-space: pre-wrap;">{{ msg.content }}</div>
+                </div>
+            </div>
+            {% else %}
+            <!-- AI回答 -->
+            <div style="display: flex; justify-content: flex-start; margin-bottom: 10px;">
+                <div style="max-width: 85%; background-color: #F3E5F5; padding: 12px 16px; border-radius: 12px; border-bottom-left-radius: 4px;">
+                    <div style="font-weight: bold; color: #7B1FA2; margin-bottom: 5px; font-size: 13px;">🤖 茶助教</div>
+                    <div style="color: #333; line-height: 1.8; white-space: pre-wrap;">{{ msg.content }}</div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
 <div style="margin-top: 20px; display: flex; gap: 10px;">
     <a href="/" class="btn">返回列表</a>
     <button onclick="deleteStudent('{{ group.submission_id }}', '{{ group.school }} - {{ group.grade }}{{ group.class_number }}班')" 
