@@ -7,6 +7,11 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.ui.viewinterop.AndroidView
+import io.noties.markwon.Markwon
+import io.noties.markwon.ext.strikethrough.StrikethroughPlugin
+import io.noties.markwon.ext.tables.TablePlugin
+import io.noties.markwon.linkify.LinkifyPlugin
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Send
@@ -542,15 +547,30 @@ fun ChatMessageItem(
                             modifier = Modifier.fillMaxWidth()
                         )
                     } else {
-                        SelectionContainer {
-                            Text(
-                                text = message.content,
-                                fontSize = 17.sp,
-                                color = Color(0xFF212121),
-                                lineHeight = 26.sp,
-                                modifier = Modifier.fillMaxWidth()
-                            )
+                        val context = LocalContext.current
+                        val markwon = remember { 
+                            Markwon.builder(context)
+                                .usePlugin(StrikethroughPlugin.create())
+                                .usePlugin(TablePlugin.create(context))
+                                .usePlugin(LinkifyPlugin.create())
+                                .build()
                         }
+
+                        AndroidView(
+                            factory = { ctx ->
+                                android.widget.TextView(ctx).apply {
+                                    setTextIsSelectable(true)
+                                    textSize = 17f
+                                    setLineSpacing(8f, 1f)
+                                    setPadding(0, 0, 0, 0)
+                                    setTextColor(android.graphics.Color.parseColor("#212121"))
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            update = { textView ->
+                                markwon.setMarkdown(textView, message.content)
+                            }
+                        )
                     }
                 }
             }
