@@ -468,43 +468,78 @@ fun ChatMessageItem(
     modifier: Modifier = Modifier
 ) {
     val isUser = message.role == "user"
-    
+    val roleLabel = if (isUser) "我" else "茶助教"
+
     Row(
         modifier = modifier,
         horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start
     ) {
-        Card(
+        Column(
             modifier = Modifier
-                .widthIn(max = 1000.dp) // 增加最大宽度，让回答内容显示更宽
-                .fillMaxWidth(if (isUser) 0.7f else 0.9f) // 用户消息占70%，助手消息占90%
-                .padding(horizontal = if (isUser) 32.dp else 0.dp),
-            shape = RoundedCornerShape(
-                topStart = 16.dp,
-                topEnd = 16.dp,
-                bottomStart = if (isUser) 16.dp else 4.dp,
-                bottomEnd = if (isUser) 4.dp else 16.dp
-            ),
-            colors = CardDefaults.cardColors(
-                containerColor = if (isUser) {
-                    Color(0xFF4CAF50)
-                } else {
-                    Color.White.copy(alpha = 0.95f)
-                }
-            ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                .widthIn(max = 1200.dp)
+                .fillMaxWidth(if (isUser) 0.65f else 0.95f)
+                .padding(horizontal = if (isUser) 40.dp else 8.dp)
         ) {
-            Column(
-                modifier = Modifier
-                    .padding(20.dp) // 增加内边距，让内容更易读
+            // 角色标识标签行
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start
             ) {
-                // 显示消息内容（暂时使用普通文本，Markdown 格式会以文本形式显示）
-                Text(
-                    text = message.content,
-                    fontSize = 17.sp,
-                    color = if (isUser) Color.White else Color(0xFF212121),
-                    lineHeight = 26.sp,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Surface(
+                    color = if (isUser) Color(0xFF2E7D32) else Color(0xFF4CAF50),
+                    shape = RoundedCornerShape(
+                        topStart = 12.dp,
+                        topEnd = 12.dp,
+                        bottomStart = 12.dp,
+                        bottomEnd = 0.dp
+                    ),
+                    modifier = Modifier.padding(
+                        start = if (!isUser) 12.dp else 0.dp,
+                        end = if (isUser) 12.dp else 0.dp,
+                        top = 8.dp,
+                        bottom = 4.dp
+                    )
+                ) {
+                    Text(
+                        text = roleLabel,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                    )
+                }
+            }
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(
+                    topStart = 16.dp,
+                    topEnd = 16.dp,
+                    bottomStart = if (isUser) 16.dp else 4.dp,
+                    bottomEnd = if (isUser) 4.dp else 16.dp
+                ),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (isUser) {
+                        Color(0xFF4CAF50)
+                    } else {
+                        Color.White.copy(alpha = 0.95f)
+                    }
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(20.dp)
+                ) {
+                    // 显示消息内容
+                    Text(
+                        text = message.content,
+                        fontSize = 17.sp,
+                        color = if (isUser) Color.White else Color(0xFF212121),
+                        lineHeight = 26.sp,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
         }
     }
