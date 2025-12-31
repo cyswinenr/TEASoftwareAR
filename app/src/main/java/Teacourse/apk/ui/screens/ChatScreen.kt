@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Send
@@ -531,14 +532,26 @@ fun ChatMessageItem(
                     modifier = Modifier
                         .padding(20.dp)
                 ) {
-                    // 显示消息内容
-                    Text(
-                        text = message.content,
-                        fontSize = 17.sp,
-                        color = if (isUser) Color.White else Color(0xFF212121),
-                        lineHeight = 26.sp,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    // 显示消息内容 - AI的回答可选择复制
+                    if (isUser) {
+                        Text(
+                            text = message.content,
+                            fontSize = 17.sp,
+                            color = Color.White,
+                            lineHeight = 26.sp,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    } else {
+                        SelectionContainer {
+                            Text(
+                                text = message.content,
+                                fontSize = 17.sp,
+                                color = Color(0xFF212121),
+                                lineHeight = 26.sp,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
                 }
             }
         }
