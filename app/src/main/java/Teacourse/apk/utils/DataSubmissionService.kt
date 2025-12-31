@@ -207,7 +207,7 @@ class DataSubmissionService(private val context: Context) {
             }
             json.put("creative", creative)
 
-            // 智能体问答记录
+            // 茶助教记录
             val chatHistoryManager = ChatHistoryManager(context)
             val chatHistory = chatHistoryManager.getChatHistoryAsJson()
             json.put("chatHistory", chatHistory)

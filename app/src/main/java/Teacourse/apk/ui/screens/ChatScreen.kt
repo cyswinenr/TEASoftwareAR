@@ -64,6 +64,9 @@ fun ChatScreen(
     
     // 显示退出确认对话框
     var showExitDialog by remember { mutableStateOf(false) }
+    
+    // 跟踪上次保存到永久历史的消息数量
+    var lastSavedSize by remember { mutableStateOf(0) }
 
     // 用于区分加载历史和新增消息
     var initialLoadSize by remember { mutableStateOf(0) }
@@ -129,19 +132,28 @@ fun ChatScreen(
 
             // 只有当消息数量超过初始加载大小时，才追加到永久历史
             if (chatMessages.size > initialLoadSize) {
-                val lastMessage = chatMessages.last()
-                historyManager.appendMessageToPermanent(lastMessage)
+                // 计算需要保存的新消息
+                val newMessages = if (lastSavedSize < initialLoadSize) {
+                    // 第一次保存：保存所有超出初始加载大小的消息
+                    chatMessages.subList(initialLoadSize, chatMessages.size)
+                } else {
+                    // 后续保存：只保存新增的消息
+                    chatMessages.subList(lastSavedSize, chatMessages.size)
+                }
+                
+                if (newMessages.isNotEmpty()) {
+                    // 批量保存到永久历史
+                    historyManager.saveChatMessagesPermanent(newMessages)
+                    // 更新上次保存的大小
+                    lastSavedSize = chatMessages.size
+                }
             }
 
             // 滚动到底部
-            coroutineScope.launch {
-                listState.animateScrollToItem(chatMessages.size - 1)
-            }
+            listState.animateScrollToItem(chatMessages.size - 1)
         } else if (chatMessages.isNotEmpty() && hasLoadedInitial) {
             // 正在加载时只滚动，不保存
-            coroutineScope.launch {
-                listState.animateScrollToItem(chatMessages.size - 1)
-            }
+            listState.animateScrollToItem(chatMessages.size - 1)
         }
     }
 
@@ -206,7 +218,7 @@ fun ChatScreen(
                 
                 // 标题
                 Text(
-                    text = "智能体问答",
+                    text = "茶助教",
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
@@ -503,6 +515,7 @@ fun ChatScreen(
                                 historyMessages.clear()
                                 historyManager.clearChatHistory()
                                 initialLoadSize = 0  // 重置初始加载大小
+                                lastSavedSize = 0  // 重置保存计数器
                                 hasLoadedInitial = false  // 重置加载状态
                                 // 清除持久化标记
                                 val prefs = context.getSharedPreferences("ChatScreen", Context.MODE_PRIVATE)

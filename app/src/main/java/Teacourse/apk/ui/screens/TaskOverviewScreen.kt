@@ -218,7 +218,7 @@ fun TaskOverviewScreen(
                         )
                     }
                     
-                    // 智能体问答按钮
+                    // 茶助教按钮
                     Button(
                         onClick = onChatClick,
                         modifier = Modifier
@@ -230,7 +230,7 @@ fun TaskOverviewScreen(
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                     ) {
                         Text(
-                            text = "智能体问答",
+                            text = "茶助教",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
@@ -288,13 +288,88 @@ fun TaskOverviewScreen(
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(24.dp),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 24.dp),
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.weight(1f)  // 让LazyRow不占满全部空间
             ) {
                 items(tasks) { task ->
                     TaskCard(
                         task = task,
                         onClick = { onTaskClick(task.route) }
                     )
+                }
+            }
+            
+            // 茶助教引导卡片
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 12.dp)
+                    .clickable { onChatClick() },
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(0xFFF3E5F5)  // 浅紫色背景
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // 左侧头像
+                    Surface(
+                        modifier = Modifier.size(60.dp),
+                        shape = RoundedCornerShape(30.dp),
+                        color = Color(0xFF9C27B0)
+                    ) {
+                        Box(
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "🍵",
+                                fontSize = 30.sp
+                            )
+                        }
+                    }
+                    
+                    // 中间文字
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 16.dp)
+                    ) {
+                        Text(
+                            text = "不懂就问茶助教✨",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF7B1FA2)
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "让学茶变得更简单有趣",
+                            fontSize = 14.sp,
+                            color = Color(0xFF424242)
+                        )
+                    }
+                    
+                    // 右侧箭头
+                    Surface(
+                        modifier = Modifier.size(40.dp),
+                        shape = RoundedCornerShape(20.dp),
+                        color = Color(0xFF9C27B0)
+                    ) {
+                        Box(
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "→",
+                                fontSize = 24.sp,
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
                 }
             }
         }

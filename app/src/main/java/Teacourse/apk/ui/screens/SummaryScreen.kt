@@ -100,7 +100,7 @@ fun SummaryScreen(
         )
     }
 
-    // 智能体问答记录（使用永久历史，不会被删除）
+    // 茶助教记录（使用永久历史，不会被删除）
     val chatHistoryManager = remember { ChatHistoryManager(context) }
     var chatMessages by remember { mutableStateOf<List<ChatMessage>>(emptyList()) }
     var studentQuestions by remember { mutableStateOf<List<String>>(emptyList()) }
@@ -383,9 +383,9 @@ fun SummaryScreen(
 
             Spacer(modifier = Modifier.height(30.dp))
 
-            // 智能体问答记录汇总
+            // 茶助教记录汇总
             SummarySection(
-                title = "5. 智能体问答记录",
+                title = "5. 茶助教记录",
                 color = Color(0xFF9C27B0),
                 onEditClick = { },
                 showEditButton = false  // 不显示编辑按钮

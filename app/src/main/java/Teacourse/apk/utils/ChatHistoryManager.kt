@@ -325,7 +325,7 @@ class ChatHistoryManager(context: Context) {
         val date = studentPrefs.getString("date", "") ?: ""
 
         val sb = StringBuilder()
-        sb.appendLine("=== 茶文化课程 - 智能体问答记录 ===")
+        sb.appendLine("=== 茶文化课程 - 茶助教记录 ===")
         sb.appendLine()
         sb.appendLine("【学生信息】")
         sb.appendLine("学校: $school")
